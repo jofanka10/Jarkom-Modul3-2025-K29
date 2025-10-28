@@ -55,6 +55,7 @@ Berarti pada sang Penghubung Antar Dunia tidak boleh terhubung ke internet. Pada
 iptables -A OUTPUT -o eth0 -j DROP
 ```
 
+### Node Lain
 Lalu, pada node lainnya, konfigurasinya seperti ini.
 
 ```
@@ -90,3 +91,11 @@ Tentunya IP tersebut menyesuaikan setiap node. Untuk daftar setiap nodenya seper
 | Minastir | 10.78.5.1 | 10.78.5.2 |
 
 Jika berhasil, maka akan muncul seperti ini.
+
+### Pada Durin
+
+<img width="1104" height="447" alt="Screenshot 2025-10-29 at 00 23 00" src="https://github.com/user-attachments/assets/27011dd0-2067-45b2-8982-85f27e3cab8e" />
+
+### Pada Node Lainnya
+
+<img width="1313" height="821" alt="Screenshot 2025-10-29 at 00 24 30" src="https://github.com/user-attachments/assets/dd3bbd7f-f984-47b5-a03a-572ac2a09013" />
