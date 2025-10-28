@@ -69,6 +69,24 @@ iface eth0 inet static
 Tentunya IP tersebut menyesuaikan setiap node. Untuk daftar setiap nodenya seperti ini.
 | Node  | {gateway} | {ip_address} |
 | --- | --- | --- |
-| 
+| Elendil | 10.78.1.1 | 10.78.1.2 |
+| Isdilur | 10.78.1.1 | 10.78.1.3 |
+| Anarion | 10.78.1.1 | 10.78.1.4 |
+| Miriel | 10.78.1.1 | 10.78.1.5 |
+| Amandil | 10.78.1.1 | 10.78.1.6 |
+| Elros | 10.78.1.1 |10.78.1.7|
+| Gilgalad | 10.78.2.1 | 10.78.2.2 |
+| Celebrimor | 10.78.2.1 | 10.78.2.3 |
+| Pharazom | 10.78.2.1 | 10.78.2.4 |
+| Galadriel | 10.78.2.1 | 10.78.2.5 |
+| Celeborn | 10.78.2.1 | 10.78.2.6 |
+| Oropher | 10.78.2.1 | 10.78.2.7 |
+| Khamul | 10.78.3.1 | 10.78.3.2 |
+| Erendis | 10.78.3.1 | 10.78.3.3 |
+| Amdir | 10.78.3.1 | 10.78.3.4 |
+| Aldarion | 10.78.4.1 | 10.78.4.2 |
+| Palantir | 10.78.4.1 | 10.78.4.3 |
+| Narvi | 10.78.4.1 | 10.78.4.4 |
+| Minastir | 10.78.5.1 | 10.78.5.2 |
 
 Jika berhasil, maka akan muncul seperti ini.
