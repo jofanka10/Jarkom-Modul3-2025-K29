@@ -206,9 +206,16 @@ INTERFACESv6=""
 ```
 
 ## Pada Client (Amandil/Gilgalad)
-Selanjutnya, pada client lakukan restart node. Lalu, cek dengan 
-```ip a show eth0```.
+Selanjutnya, pada client lakukan restart node. Lalu, cek dengan ini.
+```
+ip a show eth0
+```
 
+## Kembali ke Aldarion
+Start DHCP pada Aldarion.
+```
+service isc-dhcp-server start
+```
 Jika ada IP maka prosesnya sudah berhasil. Selain itu, pada **Aldarion** kita bisa lakukan pengecekan dengan 
 ```
 cat /var/lib/dhcp/dhcpd.leases
@@ -219,3 +226,104 @@ Jika berhasil akan muncul seperti ini.
 ![WhatsApp Image 2025-10-30 at 13 58 47](https://github.com/user-attachments/assets/e45a2369-4a53-45d7-a1c3-191b416a1a01)
 
 
+## No. 3
+Sekarang, kita akan jadikan Minastir agar ia dapat mengatur node lain (selain Durin) dapat berkirim pesan ke luar Arda. Untuk konfigurasinya seperti ini.
+
+### Minastir
+Mula-mula, kita akan instal `nginx`.
+```
+apt update
+apt install nginx
+```
+Setelah itu, kita config pada file `/etc/nginx/conf.d/forward_proxy.conf`. Untuk kodenya seperti ini.
+`/etc/nginx/conf.d/forward_proxy.conf`
+```
+server {
+    listen 8080 default_server; # Jadikan ini server default untuk port 8080
+    server_name _;              # Gunakan underscore sebagai server catch-all
+    
+    # KOREKSI SUBET IP HARUS BENAR 
+    allow 10.78.1.0/24;
+    allow 10.78.2.0/24;
+    allow 10.78.3.0/24;
+    allow 10.78.4.0/24;
+    allow 10.78.5.0/24;
+    deny all; 
+
+if ($host = "www.facebook.com") {
+        return 403;
+    }
+    
+    # Tambahkan host tanpa 'www.' juga, karena curl mengakses 'facebook.com'
+    if ($host = "facebook.com") {
+        return 403;
+    }
+
+    
+    location / {
+        # *** Mengatasi Masalah Host dan Resolusi ***
+        resolver 8.8.8.8; 
+        
+        # Ambil host tujuan dari header HTTP
+        set $target_host $http_host; 
+        
+        # Gunakan Host header sebagai URL proxy
+        proxy_pass http://$target_host; 
+
+        # Tambahkan ini untuk menghindari konflik header:
+        proxy_set_header Host $target_host;
+        proxy_set_header X-Forwarded-For $remote_addr;
+        proxy_set_header Connection "";
+    }
+}
+
+```
+
+```
+nginx -t
+kill -HUP $(cat /var/run/nginx.pid)
+```
+
+
+### Konfigurasi di Durin
+
+Untuk memastikan, kita dapat melakukan konfigurasi awal pada Durin. Untuk kodenya seperti ini.
+```
+echo 1 > /proc/sys/net/ipv4/ip_forward
+iptables -t nat -F
+```
+
+Kita akan terapkan Masquerade menggunakan iptables. Untuk kodenya seperti ini.
+iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
+
+Selanjutnya, kita akan menerapkan DNAT agar pesan yang dikirim dari node client melewati Minastir. Untuk kodenya seperti ini.
+```
+# Subnet 10.78.1.x
+iptables -t nat -A PREROUTING -s 10.78.1.0/24 -p tcp --dport 80 -j DNAT --to-destination 10.78.5.2:8080
+iptables -t nat -A PREROUTING -s 10.78.1.0/24 -p tcp --dport 443 -j DNAT --to-destination 10.78.5.2:8080
+
+# Subnet 10.78.2.x
+iptables -t nat -A PREROUTING -s 10.78.2.0/24 -p tcp --dport 80 -j DNAT --to-destination 10.78.5.2:8080
+iptables -t nat -A PREROUTING -s 10.78.2.0/24 -p tcp --dport 443 -j DNAT --to-destination 10.78.5.2:8080
+
+# Subnet 10.78.3.x
+iptables -t nat -A PREROUTING -s 10.78.3.0/24 -p tcp --dport 80 -j DNAT --to-destination 10.78.5.2:8080
+iptables -t nat -A PREROUTING -s 10.78.3.0/24 -p tcp --dport 443 -j DNAT --to-destination 10.78.5.2:8080
+
+# Subnet 10.78.4.x
+iptables -t nat -A PREROUTING -s 10.78.4.0/24 -p tcp --dport 80 -j DNAT --to-destination 10.78.5.2:8080
+iptables -t nat -A PREROUTING -s 10.78.4.0/24 -p tcp --dport 443 -j DNAT --to-destination 10.78.5.2:8080
+```
+### Kode di Client
+
+Pada client, kita dapat melakukan export ke HTTP proxy dan HTTPS proxy. Untuk kodenya seperti ini.
+```
+export http_proxy="http://10.78.5.2:8080"
+export https_proxy="http://10.78.5.2:8080"
+```
+### Otomatisasi Kode pada Client
+`/etc/environment`
+```
+HTTP_PROXY="http://10.78.5.2:8080"
+HTTPS_PROXY="http://10.78.5.2:8080"
+```
