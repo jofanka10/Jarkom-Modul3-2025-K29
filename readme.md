@@ -230,100 +230,164 @@ Jika berhasil akan muncul seperti ini.
 Sekarang, kita akan jadikan Minastir agar ia dapat mengatur node lain (selain Durin) dapat berkirim pesan ke luar Arda. Untuk konfigurasinya seperti ini.
 
 ### Minastir
-Mula-mula, kita akan instal `nginx`.
+Pada node ini, kita akan melakukan beberapa konfigurasi. Untuk konfigurasinya seperti ini. Kita akan install `nginx` terlebih dahulu.
 ```
-apt update
-apt install nginx
+apt install nginx -y
 ```
-Setelah itu, kita config pada file `/etc/nginx/conf.d/forward_proxy.conf`. Untuk kodenya seperti ini.
-`/etc/nginx/conf.d/forward_proxy.conf`
+Lalu, kita akan melakukan konfigurasi untuk `/etc/nginx/conf.d/forward_proxy.conf`. Untuk konfigurasinya seperti ini.
+
 ```
 server {
-    listen 8080 default_server; # Jadikan ini server default untuk port 8080
-    server_name _;              # Gunakan underscore sebagai server catch-all
+    listen 8080 default_server;
+    server_name _;
     
-    # KOREKSI SUBET IP HARUS BENAR 
-    allow 10.78.1.0/24;
-    allow 10.78.2.0/24;
-    allow 10.78.3.0/24;
-    allow 10.78.4.0/24;
-    allow 10.78.5.0/24;
-    deny all; 
-
-if ($host = "www.facebook.com") {
+    # Aturan Pemeriksaan: Blokir facebook.com
+    if ($host = "www.facebook.com") {
         return 403;
     }
-    
-    # Tambahkan host tanpa 'www.' juga, karena curl mengakses 'facebook.com'
     if ($host = "facebook.com") {
         return 403;
     }
 
-    
     location / {
-        # *** Mengatasi Masalah Host dan Resolusi ***
-        resolver 8.8.8.8; 
+        # Gunakan DNS Durin/Valinor
+        resolver 192.168.122.1; 
         
-        # Ambil host tujuan dari header HTTP
         set $target_host $http_host; 
-        
-        # Gunakan Host header sebagai URL proxy
         proxy_pass http://$target_host; 
 
-        # Tambahkan ini untuk menghindari konflik header:
+        # Header yang diperlukan untuk forward proxy
         proxy_set_header Host $target_host;
         proxy_set_header X-Forwarded-For $remote_addr;
         proxy_set_header Connection "";
     }
 }
-
 ```
 
+Untuk menerapkan konfigurasi `nginx`, gunakan kode ini.
 ```
 nginx -t
-kill -HUP $(cat /var/run/nginx.pid)
+service nginx reload
 ```
 
-
-### Konfigurasi di Durin
-
-Untuk memastikan, kita dapat melakukan konfigurasi awal pada Durin. Untuk kodenya seperti ini.
+Selanjutnya, kita akan setup dnsmasq di node ini. Untuk kodenya seperti ini.
 ```
+apt install dnsmasq -y
+```
+
+Lalu, kita akan config pada `/etc/dnsmasq.conf`. Untuk kodenya seperti ini
+```
+listen-address=127.0.0.1,10.78.5.2
+server=192.168.122.1
+interface=eth0,eth1,eth2,eth3,eth4,eth5
+```
+dengan `10.78.5.2` merupakan IP dari Minastir itu sendiri. Setelah itu, restart dnsmasq dengan kode berikut.
+```
+service dnsmasq restart
+```
+
+### Durin
+Pada Durin, mula-mula kita akan memastikan IP forwarding aktif. Caranya yaitu seperti ini.
+```
+# Mengaktifkan IP Forwading
 echo 1 > /proc/sys/net/ipv4/ip_forward
-iptables -t nat -F
-```
 
-Kita akan terapkan Masquerade menggunakan iptables. Untuk kodenya seperti ini.
+# cek apakah IP Forwading aktif (harus muncul 1)
+cat /proc/sys/net/ipv4/ip_forward
+```
+Selanjutnya, kita akan tambahkan aturan Masquerade. Untuk kodenya seperti ini.
+```
 iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
-
-Selanjutnya, kita akan menerapkan DNAT agar pesan yang dikirim dari node client melewati Minastir. Untuk kodenya seperti ini.
 ```
-# Subnet 10.78.1.x
-iptables -t nat -A PREROUTING -s 10.78.1.0/24 -p tcp --dport 80 -j DNAT --to-destination 10.78.5.2:8080
-iptables -t nat -A PREROUTING -s 10.78.1.0/24 -p tcp --dport 443 -j DNAT --to-destination 10.78.5.2:8080
 
-# Subnet 10.78.2.x
-iptables -t nat -A PREROUTING -s 10.78.2.0/24 -p tcp --dport 80 -j DNAT --to-destination 10.78.5.2:8080
-iptables -t nat -A PREROUTING -s 10.78.2.0/24 -p tcp --dport 443 -j DNAT --to-destination 10.78.5.2:8080
+Lalu, kita akan mengalihkan HTTP port 80 dan 443 ke Minastir:8080. Untuk kodenya seperti ini.
+```
+# Mengalihkan HTTP (Port 80) dari seluruh subnet 10.78.x.x ke Minastir:8080
+iptables -t nat -A PREROUTING \
+-s 10.78.0.0/16 \
+-p tcp --dport 80 \
+-d ! 10.78.0.0/16 \
+-j DNAT --to-destination 10.78.5.2:8080
 
-# Subnet 10.78.3.x
-iptables -t nat -A PREROUTING -s 10.78.3.0/24 -p tcp --dport 80 -j DNAT --to-destination 10.78.5.2:8080
-iptables -t nat -A PREROUTING -s 10.78.3.0/24 -p tcp --dport 443 -j DNAT --to-destination 10.78.5.2:8080
+# Mengalihkan HTTPS (Port 443) ke Minastir:8080
+iptables -t nat -A PREROUTING \
+-s 10.78.0.0/16 \
+-p tcp --dport 443 \
+-d ! 10.78.0.0/16 \
+-j DNAT --to-destination 10.78.5.2:8080
+```
 
-# Subnet 10.78.4.x
-iptables -t nat -A PREROUTING -s 10.78.4.0/24 -p tcp --dport 80 -j DNAT --to-destination 10.78.5.2:8080
-iptables -t nat -A PREROUTING -s 10.78.4.0/24 -p tcp --dport 443 -j DNAT --to-destination 10.78.5.2:8080
-```
-### Kode di Client
+### Aldarion
+Pada node ini, kita akan merubah isi dari `/etc/dhcp/dhcpd.conf`. Kita akan mengubah value dari `option domain-name-servers` menjadi `10.78.5.2`. Untuk kodenya seperti ini.
 
-Pada client, kita dapat melakukan export ke HTTP proxy dan HTTPS proxy. Untuk kodenya seperti ini.
 ```
-export http_proxy="http://10.78.5.2:8080"
-export https_proxy="http://10.78.5.2:8080"
+option domain-name "numenor.lab";
+option domain-name-servers 10.78.5.2; # REVISI: Ganti ke Minastir
+default-lease-time 600;
+max-lease-time 7200;
+authoritative;
+
+# Subnet for Human Family (10.78.1.0/24)
+subnet 10.78.1.0 netmask 255.255.255.0 {
+    range 10.78.1.6 10.78.1.34;
+    range 10.78.1.68 10.78.1.94;
+
+    # Klien akan menggunakan Durin (10.78.1.1) sebagai gateway
+    option routers 10.78.1.1;
+
+    # Tambahan dari template yang diminta
+    option broadcast-address 10.78.1.255;
+    option domain-name-servers 10.78.5.2; # REVISI: Ganti ke Minastir
+
+    default-lease-time 1800;
+    max-lease-time 3600;
+}
+
+# Subnet for Elf Family (10.78.2.0/24)
+subnet 10.78.2.0 netmask 255.255.255.0 {
+    range 10.78.2.35 10.78.2.67;
+    range 10.78.2.96 10.78.2.121;
+
+    # Klien akan menggunakan Durin (10.78.2.1) sebagai gateway
+    option routers 10.78.2.1;
+
+    # Tambahan dari template yang diminta
+    option broadcast-address 10.78.2.255;
+    option domain-name-servers 10.78.5.2; # REVISI: Ganti ke Minastir
+
+    default-lease-time 600;
+    max-lease-time 3600;
+}
+
+# Subnet untuk jaringan Aldarion (server DHCP)
+subnet 10.78.4.0 netmask 255.255.255.0 {
+    range 10.78.4.10 10.78.4.20;
+    option routers 10.78.4.1;
+
+    # Tambahan dari template yang diminta
+    option broadcast-address 10.78.4.255;
+    option domain-name-servers 10.78.5.2; # REVISI: Ganti ke Minastir
+
+    # Tidak perlu lease-time karena IP statis/server
+}
+
+# Fixed address for Khamul (di subnet 10.78.3.0/24)
+host khamul {
+    hardware ethernet 02:42:ab:01:c2:00;
+    fixed-address 10.78.3.95;
+
+    # Khamul juga harus tahu gateway dan DNS
+    option routers 10.78.3.1;
+    option domain-name-servers 10.78.5.2; # REVISI: Ganti ke Minastir
+}
 ```
-### Otomatisasi Kode pada Client
-`/etc/environment`
+Setelah itu, kita dapat restart DHCP Server dengan kode ini.
 ```
-HTTP_PROXY="http://10.78.5.2:8080"
-HTTPS_PROXY="http://10.78.5.2:8080"
+service isc-dhcp-server restart
+```
+
+### Pada Client
+Untuk client cukup ubah isi dari `/etc/resolv.conf` dengan kode ini.
+```
+up echo nameserver 10.78.5.2 > /etc/resolv.conf
 ```
