@@ -196,7 +196,7 @@ host khamul {
 }
 ```
 
-Note: Cara untuk mendapatkan ethernet di Khamul adalah dengan melakukan `ip a show eth0` pada Khamul lalu copy kode seperti `02:42:ab:01:c2:00` ke `/etc/dhcp/dhcod.conf` di Aldarion.
+Note: Cara untuk mendapatkan ethernet di Khamul adalah dengan melakukan `ip a show eth0` pada Khamul lalu copy kode seperti `02:42:ab:01:c2:00` ke `/etc/dhcp/dhcpd.conf` di Aldarion.
 
 Lalu, kita akan config `/etc/default/isc-dhcp-server` menjadi seperti ini.
 
