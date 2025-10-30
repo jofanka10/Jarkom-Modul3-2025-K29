@@ -56,7 +56,7 @@ iptables -A OUTPUT -o eth0 -j DROP
 ```
 
 ### Node Lain
-Lalu, pada node lainnya, konfigurasinya seperti ini.
+Lalu, pada node lainnya, konfigurasinya seperti ini (static).
 
 ```
 auto eth0
@@ -67,6 +67,13 @@ iface eth0 inet static
     up echo nameserver 192.168.122.1 > /etc/resolv.conf
 ```
 
+Untuk dynamic seperti ini
+```
+auto eth0
+iface eth0 inet dhcp
+    up echo nameserver 192.168.122.1 > /etc/resolv.conf
+```
+
 Tentunya IP tersebut menyesuaikan setiap node. Untuk daftar setiap nodenya seperti ini.
 | Node  | {gateway} | {ip_address} |
 | --- | --- | --- |
@@ -74,9 +81,9 @@ Tentunya IP tersebut menyesuaikan setiap node. Untuk daftar setiap nodenya seper
 | Isdilur | 10.78.1.1 | 10.78.1.3 |
 | Anarion | 10.78.1.1 | 10.78.1.4 |
 | Miriel | 10.78.1.1 | 10.78.1.5 |
-| Amandil | 10.78.1.1 | 10.78.1.6 |
+| Amandil | 10.78.1.1 | dynamic |
 | Elros | 10.78.1.1 |10.78.1.7|
-| Gilgalad | 10.78.2.1 | 10.78.2.2 |
+| Gilgalad | 10.78.2.1 | dynamic |
 | Celebrimor | 10.78.2.1 | 10.78.2.3 |
 | Pharazom | 10.78.2.1 | 10.78.2.4 |
 | Galadriel | 10.78.2.1 | 10.78.2.5 |
