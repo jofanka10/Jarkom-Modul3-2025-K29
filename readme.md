@@ -133,7 +133,7 @@ Mula-mula, kita install DHCP Server. Untuk kodenya seperti ini.
 apt-get update
 apt-get install isc-dhcp-server -y
 ```
-Lalu, kita akan melakukan config pada `/etc/dhcp/dhcod.conf`. Untuk confignya seperti ini.
+Lalu, kita akan melakukan config pada `/etc/dhcp/dhcpd.conf`. Untuk confignya seperti ini.
 ```
 option domain-name "numenor.lab";
 option domain-name-servers 10.78.3.2, 10.78.4.2; # Pindahkan ke global untuk keseragaman, atau biarkan di subnet
