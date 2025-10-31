@@ -317,6 +317,15 @@ iptables -t nat -A PREROUTING \
 -j DNAT --to-destination 10.78.5.2:8080
 ```
 
+Selanjutnya, kita akan bersihkan semua aturan NAT dengan kode ini.
+```
+iptables -t nat -F
+```
+Lalu, kita akan pasang kembali MASQUERADE. untuk kodenya seperti ini.
+```
+iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
+```
+
 ### Aldarion
 Pada node ini, kita akan merubah isi dari `/etc/dhcp/dhcpd.conf`. Kita akan mengubah value dari `option domain-name-servers` menjadi `10.78.5.2`. Untuk kodenya seperti ini.
 
@@ -391,3 +400,27 @@ Untuk client cukup ubah isi dari `/etc/resolv.conf` dengan kode ini.
 ```
 up echo nameserver 10.78.5.2 > /etc/resolv.conf
 ```
+
+### Uji Coba
+Kita akan lakukan uji coba di Client dan Durin. Kita bisa uji coba dengan
+```
+dig google.com
+curl http://facebook.com
+```
+Jika berhasil, maka akan muncul seperti ini.
+
+**Client**
+
+<img width="753" height="669" alt="image" src="https://github.com/user-attachments/assets/b5c41fae-63b3-49d2-acf4-eab5a16b4420" />
+
+
+**Durin**
+
+<img width="627" height="210" alt="image" src="https://github.com/user-attachments/assets/89fda29d-9092-4346-a8ad-443e226970e8" />
+
+
+### Error Handling
+| Jenis Error | Solusi |
+| --- | --- |
+| `dnsmasq: failed to create listening socket for port 53: Address already in use failed!` | `netstat -tuln \| grep 53` |
+| `curl: (7) Failed to connect... Could not connect to server` | `service nginx start` di Minastir |
