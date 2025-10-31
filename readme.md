@@ -424,3 +424,125 @@ Jika berhasil, maka akan muncul seperti ini.
 | --- | --- |
 | `dnsmasq: failed to create listening socket for port 53: Address already in use failed!` | `netstat -tuln \| grep 53` |
 | `curl: (7) Failed to connect... Could not connect to server` | `service nginx start` di Minastir |
+
+
+## No. 4
+Pada soal ini kita akan setting Erendis di `ns1.K29.com` dan Amdir di `ns2.K29.com`. Mula-mula, kita akan instal `bind9` di Erendis dan Amdir. Untuk commandnya seperti ini.
+```
+apt update
+apt install bind9 -y
+```
+### Config Erendis
+Selanjutnya, kita akan config pada beberapa file ini.
+`/etc/bind/named.conf.local`
+```
+# Di Erendis (10.78.3.3)
+zone "K29.com" {
+    type master;
+    file "/etc/bind/db.K29";
+    allow-transfer { 10.78.3.4; };  # Izinkan transfer ke Amdir (IP Slave)
+    notify yes;                    # Beri tahu Slave saat ada update
+};
+```
+
+`/etc/bind/db.K29`
+```
+# Di Erendis: cp /etc/bind/db.local /etc/bind/db.K29
+# Edit /etc/bind/db.K29
+$TTL    604800
+@       IN      SOA     ns1.K29.com. root.K29.com. (
+                     2025103101 ; Serial (UBAH INI SETIAP UPDATE)
+                      604800     ; Refresh
+                       86400     ; Retry
+                     2419200     ; Expire
+                      604800 )   ; Negative Cache TTL
+;
+@       IN      NS      ns1.K29.com.
+@       IN      NS      ns2.K29.com.
+
+ns1     IN      A       10.78.3.3
+ns2     IN      A       10.78.3.4
+
+; Record-record klien:
+Palantir IN      A       10.78.4.3
+Elros    IN      A       10.78.1.7
+Pharazon IN      A       10.78.2.4
+Elendil  IN      A       10.78.1.2
+Isildur  IN      A       10.78.1.3
+Anarion  IN      A       10.78.1.4
+Galadriel IN     A       10.78.2.5
+Celeborn IN      A       10.78.2.6
+Oropher  IN      A       10.78.2.7
+```
+
+Lalu, restart `bind9` menggunakan command ini.
+```
+killall named 2>/dev/null
+/usr/sbin/named -g &
+```
+
+### Config Amdir
+Pada Amdir, kita akan konfigurasi file ini.
+`/etc/bind/named.conf.local`
+```
+zone "K29.com" {
+    type slave;
+    file "db.K29";  
+    masters { 10.78.3.3; }; # IP Address Erendis (Master)
+};
+```
+Lalu, restart `bind9` menggunakan command ini.
+```
+killall named 2>/dev/null
+/usr/sbin/named -g &
+```
+
+Setelah itu, tunggu selama beberapa saat. Jika transfer file dari Erendis ke Amdir berhasil, akan muncul seperti ini.
+
+### Uji Coba
+Selanjutnya, pada Erendis `/etc/bind/db.K29` kita akan merubah sedikit isinya, misalnya pada IP Pharazon. Sebelum itu, kita akan cek ip dari Pharazon di Amdir. Untuk kodenya seperti ini.
+```
+dig @10.78.3.4 Pharazon.K29.com
+```
+Dan untuk hasilnya seperti ini.
+
+Lalu, kita coba ubah isi dari `/etc/bind/db.K29` milik Erendis. Untuk isinya dapat diubah seperti ini.
+```
+$TTL    604800
+@       IN      SOA     ns1.K29.com. root.K29.com. (
+                     2025103102 ; Serial (Wajib diubah saat update)
+                      604800     ; Refresh
+                       86400     ; Retry
+                     2419200     ; Expire
+                      604800 )   ; Negative Cache TTL
+;
+@       IN      NS      ns1.K29.com.
+@       IN      NS      ns2.K29.com.
+
+ns1     IN      A       10.78.3.3  ; Erendis
+ns2     IN      A       10.78.3.4  ; Amdir
+
+; Record Klien yang Diberi Nama Domain Unik:
+Palantir IN      A       10.78.4.3
+Elros    IN      A       10.78.1.7
+Pharazon IN      A       10.78.2.99
+Elendil  IN      A       10.78.1.2
+Isildur  IN      A       10.78.1.3
+Anarion  IN      A       10.78.1.4
+Galadriel IN     A       10.78.2.5
+Celeborn IN      A       10.78.2.6
+Oropher  IN      A       10.78.2.7
+```
+Note: Setiap ada perubahan/update, seriap wajib diubah (+1) agar perubahan dapat terlihat.
+
+Jika sudah, restart `bind9` menggunakan command ini.
+```
+killall named 2>/dev/null
+/usr/sbin/named -g &
+```
+Setelah itu, kita cek kembali untuk IP Pharazon, apakah ia sudah update. Untuk commandnya seperti ini.
+```
+dig @10.78.3.4 Pharazon.K29.com
+```
+Jika berhasil maka akan muncul seperti ini.
+
