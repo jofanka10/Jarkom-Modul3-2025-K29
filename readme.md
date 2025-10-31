@@ -659,9 +659,9 @@ composer create-project laravel/laravel blueprint
 cd blueprint
 php artisan key:generate
 ```
-Konfigurasi nginx untuk Laravel
+### Konfigurasi nginx untuk Laravel
 
-Glosarium Penamaan COnfig
+Glosarium Penamaan Config
 | Node | IP Address | {x} | 
 | --- | --- | --- |
 | Elendil | 10.78.1.2 | 1 |
@@ -690,4 +690,12 @@ server {
         deny all;
     }
 }
+```
+
+### Aktifkan dan Reload nginx
+```
+ln -s /etc/nginx/sites-available/laravel /etc/nginx/sites-enabled/
+rm /etc/nginx/sites-enabled/default
+service nginx stop
+nginx
 ```
