@@ -613,3 +613,42 @@ host khamul {
     option domain-name-servers 10.78.3.2, 10.78.4.2;
 }
 ```
+
+## No. 7
+Kita akan menginstal php84, composer dan nginx pada Ksatria Númenor. Untuk Instalasinya seperti ini.
+
+### Elendil, Isdilur, Anarion
+Cek ping untuk memastikan bahwa ia terhubung ke internet.
+```
+ping google.com -c 2
+```
+Menginstall sertifikat digital
+```
+apt update -y
+apt install ca-certificates apt-transport-https lsb-release wget curl unzip git -y
+```
+Download dan install PHP
+```
+# Tambah repository resmi PHP
+wget -qO - https://packages.sury.org/php/apt.gpg | apt-key add -
+echo "deb https://packages.sury.org/php/ $(lsb_release -sc) main" > /etc/apt/sources.list.d/sury-php.list
+apt update -y
+
+# Install PHP 8.4 + ekstensi penting
+apt install php8.4 php8.4-fpm php8.4-cli php8.4-common php8.4-mbstring php8.4-xml php8.4-bcmath php8.4-zip php8.4-curl php8.4-mysql -y
+```
+Cek versi PHP
+```
+php -v
+```
+Download dan install Composer
+```
+curl -sS https://getcomposer.org/installer -o composer-setup.php
+php composer-setup.php --install-dir=/usr/local/bin --filename=composer
+composer -V
+```
+Download dan install nginx dan start nginx
+```
+apt install nginx -y
+nginx
+```
