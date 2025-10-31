@@ -691,7 +691,16 @@ server {
     }
 }
 ```
-
+```
+cd /var/www/blueprint
+chmod -R 775 storage bootstrap/cache
+chown -R www-data:www-data /var/www/blueprint
+```
+```
+php artisan cache:clear
+php artisan config:clear
+php artisan view:clear
+```
 ### Aktifkan dan Reload nginx
 ```
 ln -s /etc/nginx/sites-available/laravel /etc/nginx/sites-enabled/
@@ -699,3 +708,78 @@ rm /etc/nginx/sites-enabled/default
 service nginx stop
 nginx
 ```
+
+### Uji Coba
+Kita bisa coba kode ini dari client. Untuk kodenya seperti ini.
+```
+apt install lynx -y
+lynx http://10.78.1.2
+lynx http://10.78.1.3
+lynx http://10.78.1.4
+```
+```
+nano /var/www/blueprint/.env
+```
+```
+DB_CONNECTION=sqlite
+DB_DATABASE=/var/www/blueprint/database/database.sqlite
+```
+```
+touch /var/www/blueprint/database/database.sqlite
+chmod 666 /var/www/blueprint/database/database.sqlite
+```
+```
+php artisan config:clear
+php artisan cache:clear
+php artisan view:clear
+php artisan migrate
+```
+```
+php artisan tinker
+>>> DB::connection()->getPdo();
+```
+```
+cd /var/www/blueprint/database
+```
+```
+sqlite3 database.sqlite
+```
+sqlite> .tables
+sqlite> SELECT * FROM users;
+sqlite> .exit
+```
+# Kalau database masih kosong (belum ada tabel), kamu bisa jalankan migrasi Laravel dulu:
+
+cd /var/www/blueprint
+php artisan migrate
+```
+Buat symlink
+```
+ln -s /etc/nginx/sites-available/laravel1 /etc/nginx/sites-enabled/
+ln -s /etc/nginx/sites-available/laravel2 /etc/nginx/sites-enabled/
+ln -s /etc/nginx/sites-available/laravel3 /etc/nginx/sites-enabled/
+```
+Cek konfigurasi
+```
+nginx -t
+nginx -s reload
+ss -tuln | grep 800
+```
+
+### 
+### Error Handling
+1. Warning Trying to access array offset on null.
+   fix:
+   ```
+   nano /var/www/blueprint/.env
+   DB_CONNECTION=sqlite
+   DB_DATABASE=/var/www/blueprint/database/database.sqlite
+   touch /var/www/blueprint/database/database.sqlite
+   chmod 666 /var/www/blueprint/database/database.sqlite
+   php artisan config:clear
+   php artisan cache:clear
+   php artisan view:clear
+   DB::connection()->getPdo();
+   ```
+
+3. sad
