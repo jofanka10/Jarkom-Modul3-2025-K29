@@ -49,6 +49,7 @@ up iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE -s 10.78.5.0/16
 iptables -A OUTPUT -o eth0 -j DROP
 ```
 
+
 "...dan pastikan setiap node (selain Durin sang penghubung antar dunia) dapat sementara berkomunikasi dengan Valinor/Internet (nameserver 192.168.122.1) untuk menerima instruksi awal."
 Berarti pada sang Penghubung Antar Dunia tidak boleh terhubung ke internet. Pada konfigurasi tersebut, kode ini ditambahkan ke Durin.
 ```
@@ -436,7 +437,6 @@ apt install bind9 -y
 Selanjutnya, kita akan config pada beberapa file ini.
 `/etc/bind/named.conf.local`
 ```
-# Di Erendis (10.78.3.3)
 zone "K29.com" {
     type master;
     file "/etc/bind/db.K29";
@@ -447,8 +447,6 @@ zone "K29.com" {
 
 `/etc/bind/db.K29`
 ```
-# Di Erendis: cp /etc/bind/db.local /etc/bind/db.K29
-# Edit /etc/bind/db.K29
 $TTL    604800
 @       IN      SOA     ns1.K29.com. root.K29.com. (
                      2025103101 ; Serial (UBAH INI SETIAP UPDATE)
@@ -474,11 +472,18 @@ Galadriel IN     A       10.78.2.5
 Celeborn IN      A       10.78.2.6
 Oropher  IN      A       10.78.2.7
 ```
+Setelah itu, cek apakah dia mempunyai serial atau tidak. Kita bisa cek dengan menggunakan kode ini.
+```
+named-checkzone K29.com /etc/bind/db.K29
+```
+Jika berhasil akan muncul seperti ini.
+
+<img width="761" height="125" alt="Screenshot 2025-10-31 at 15 25 36" src="https://github.com/user-attachments/assets/3cbf0ba0-20ba-4299-a4c0-bf19878b7c01" />
+
 
 Lalu, restart `bind9` menggunakan command ini.
 ```
-killall named 2>/dev/null
-/usr/sbin/named -g &
+/etc/init.d/named restart
 ```
 
 ### Config Amdir
@@ -487,17 +492,17 @@ Pada Amdir, kita akan konfigurasi file ini.
 ```
 zone "K29.com" {
     type slave;
-    file "db.K29";  
-    masters { 10.78.3.3; }; # IP Address Erendis (Master)
+    file "/var/lib/bind/db.K29";  <-- Ganti dengan path ABSOLUT
+    masters { 10.78.3.3; };
 };
 ```
 Lalu, restart `bind9` menggunakan command ini.
 ```
-killall named 2>/dev/null
-/usr/sbin/named -g &
+/etc/init.d/named restart
 ```
 
 Setelah itu, tunggu selama beberapa saat. Jika transfer file dari Erendis ke Amdir berhasil, akan muncul seperti ini.
+<img width="928" height="214" alt="Screenshot 2025-10-31 at 15 26 53" src="https://github.com/user-attachments/assets/67a80cf1-6202-4a86-b0ad-5e571e13044c" />
 
 ### Uji Coba
 Selanjutnya, pada Erendis `/etc/bind/db.K29` kita akan merubah sedikit isinya, misalnya pada IP Pharazon. Sebelum itu, kita akan cek ip dari Pharazon di Amdir. Untuk kodenya seperti ini.
@@ -505,6 +510,8 @@ Selanjutnya, pada Erendis `/etc/bind/db.K29` kita akan merubah sedikit isinya, m
 dig @10.78.3.4 Pharazon.K29.com
 ```
 Dan untuk hasilnya seperti ini.
+
+<img width="926" height="565" alt="Screenshot 2025-10-31 at 15 20 42" src="https://github.com/user-attachments/assets/388b040e-5142-46d2-ab43-97cc1ce5bf4d" />
 
 Lalu, kita coba ubah isi dari `/etc/bind/db.K29` milik Erendis. Untuk isinya dapat diubah seperti ini.
 ```
