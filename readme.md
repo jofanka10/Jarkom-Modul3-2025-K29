@@ -652,3 +652,42 @@ Download dan install nginx dan start nginx
 apt install nginx -y
 nginx
 ```
+### Install and Setup Blueprint Laravel
+```
+cd /var/www
+composer create-project laravel/laravel blueprint
+cd blueprint
+php artisan key:generate
+```
+Konfigurasi nginx untuk Laravel
+
+Glosarium Penamaan COnfig
+| Node | IP Address | {x} | 
+| --- | --- | --- |
+| Elendil | 10.78.1.2 | 1 |
+| Isdilur | 10.78.1.3 | 2 |
+| Anarion | 10.78.1.4 | 3 |
+
+`/etc/nginx/sites-available/laravel{x}`
+```
+server {
+    listen 800{x};
+    server_name _;
+
+    root /var/www/blueprint/public;
+    index index.php index.html;
+
+    location / {
+        try_files $uri $uri/ /index.php?$query_string;
+    }
+
+    location ~ \.php$ {
+        include snippets/fastcgi-php.conf;
+        fastcgi_pass unix:/run/php/php8.4-fpm.sock;
+    }
+
+    location ~ /\.ht {
+        deny all;
+    }
+}
+```
