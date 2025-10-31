@@ -553,6 +553,9 @@ dig @10.78.3.4 Pharazon.K29.com
 ```
 Jika berhasil maka akan muncul seperti ini.
 
+<img width="914" height="569" alt="Screenshot 2025-10-31 at 15 39 30" src="https://github.com/user-attachments/assets/ca6a3217-2746-40c9-9253-6730159e057f" />
+
+
 ## No. 5
 Pada soal ini, mual-mula kita akan melakukan config pada Erendis dan Amdir. Untuk kodenya seperti ini.
 
