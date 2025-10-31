@@ -230,201 +230,56 @@ Jika berhasil akan muncul seperti ini.
 ## No. 3
 Sekarang, kita akan jadikan Minastir agar ia dapat mengatur node lain (selain Durin) dapat berkirim pesan ke luar Arda. Untuk konfigurasinya seperti ini.
 
-### Minastir
-Pada node ini, kita akan melakukan beberapa konfigurasi. Untuk konfigurasinya seperti ini. Kita akan install `nginx` terlebih dahulu.
+### Pada Minastir
+Pertama-tama, kita akan install bind9. Untuk kodenya seperti ini.
 ```
-apt install nginx -y
+apt update
+apt install bind9 -y
 ```
-Lalu, kita akan melakukan konfigurasi untuk `/etc/nginx/conf.d/forward_proxy.conf`. Untuk konfigurasinya seperti ini.
-
+Selanjutnya, kita akan config file ini.
+`etc/bind/named.conf.options`
 ```
-server {
-    listen 8080 default_server;
-    server_name _;
-    
-    # Aturan Pemeriksaan: Blokir facebook.com
-    if ($host = "www.facebook.com") {
-        return 403;
-    }
-    if ($host = "facebook.com") {
-        return 403;
-    }
+options {
+    directory "/var/cache/bind";
 
-    location / {
-        # Gunakan DNS Durin/Valinor
-        resolver 192.168.122.1; 
-        
-        set $target_host $http_host; 
-        proxy_pass http://$target_host; 
+    // IP DNS publik yang jadi tujuan forwarder
+    forwarders {
+        8.8.8.8;
+        1.1.1.1;
+    };
 
-        # Header yang diperlukan untuk forward proxy
-        proxy_set_header Host $target_host;
-        proxy_set_header X-Forwarded-For $remote_addr;
-        proxy_set_header Connection "";
-    }
-}
+    allow-query { any; };         // izinkan semua client internal
+    allow-recursion { any; };     // izinkan rekursi
+    dnssec-validation auto;
+
+    auth-nxdomain no;
+    listen-on { any; };
+    listen-on-v6 { any; };
+};
+
 ```
 
-Untuk menerapkan konfigurasi `nginx`, gunakan kode ini.
+Setelah itu, kita restart `bind9` dengan kode ini.
 ```
-nginx -t
-service nginx reload
-```
-
-Selanjutnya, kita akan setup dnsmasq di node ini. Untuk kodenya seperti ini.
-```
-apt install dnsmasq -y
-```
-
-Lalu, kita akan config pada `/etc/dnsmasq.conf`. Untuk kodenya seperti ini
-```
-listen-address=127.0.0.1,10.78.5.2
-server=192.168.122.1
-interface=eth0,eth1,eth2,eth3,eth4,eth5
-```
-dengan `10.78.5.2` merupakan IP dari Minastir itu sendiri. Setelah itu, restart dnsmasq dengan kode berikut.
-```
-service dnsmasq restart
-```
-
-### Durin
-Pada Durin, mula-mula kita akan memastikan IP forwarding aktif. Caranya yaitu seperti ini.
-```
-# Mengaktifkan IP Forwading
-echo 1 > /proc/sys/net/ipv4/ip_forward
-
-# cek apakah IP Forwading aktif (harus muncul 1)
-cat /proc/sys/net/ipv4/ip_forward
-```
-Selanjutnya, kita akan tambahkan aturan Masquerade. Untuk kodenya seperti ini.
-```
-iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
-```
-
-Lalu, kita akan mengalihkan HTTP port 80 dan 443 ke Minastir:8080. Untuk kodenya seperti ini.
-```
-# Mengalihkan HTTP (Port 80) dari seluruh subnet 10.78.x.x ke Minastir:8080
-iptables -t nat -A PREROUTING \
--s 10.78.0.0/16 \
--p tcp --dport 80 \
--d ! 10.78.0.0/16 \
--j DNAT --to-destination 10.78.5.2:8080
-
-# Mengalihkan HTTPS (Port 443) ke Minastir:8080
-iptables -t nat -A PREROUTING \
--s 10.78.0.0/16 \
--p tcp --dport 443 \
--d ! 10.78.0.0/16 \
--j DNAT --to-destination 10.78.5.2:8080
-```
-
-Selanjutnya, kita akan bersihkan semua aturan NAT dengan kode ini.
-```
-iptables -t nat -F
-```
-Lalu, kita akan pasang kembali MASQUERADE. untuk kodenya seperti ini.
-```
-iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
-```
-
-### Aldarion
-Pada node ini, kita akan merubah isi dari `/etc/dhcp/dhcpd.conf`. Kita akan mengubah value dari `option domain-name-servers` menjadi `10.78.5.2`. Untuk kodenya seperti ini.
-
-```
-option domain-name "numenor.lab";
-option domain-name-servers 10.78.5.2; # REVISI: Ganti ke Minastir
-default-lease-time 600;
-max-lease-time 7200;
-authoritative;
-
-# Subnet for Human Family (10.78.1.0/24)
-subnet 10.78.1.0 netmask 255.255.255.0 {
-    range 10.78.1.6 10.78.1.34;
-    range 10.78.1.68 10.78.1.94;
-
-    # Klien akan menggunakan Durin (10.78.1.1) sebagai gateway
-    option routers 10.78.1.1;
-
-    # Tambahan dari template yang diminta
-    option broadcast-address 10.78.1.255;
-    option domain-name-servers 10.78.5.2; # REVISI: Ganti ke Minastir
-
-    default-lease-time 1800;
-    max-lease-time 3600;
-}
-
-# Subnet for Elf Family (10.78.2.0/24)
-subnet 10.78.2.0 netmask 255.255.255.0 {
-    range 10.78.2.35 10.78.2.67;
-    range 10.78.2.96 10.78.2.121;
-
-    # Klien akan menggunakan Durin (10.78.2.1) sebagai gateway
-    option routers 10.78.2.1;
-
-    # Tambahan dari template yang diminta
-    option broadcast-address 10.78.2.255;
-    option domain-name-servers 10.78.5.2; # REVISI: Ganti ke Minastir
-
-    default-lease-time 600;
-    max-lease-time 3600;
-}
-
-# Subnet untuk jaringan Aldarion (server DHCP)
-subnet 10.78.4.0 netmask 255.255.255.0 {
-    range 10.78.4.10 10.78.4.20;
-    option routers 10.78.4.1;
-
-    # Tambahan dari template yang diminta
-    option broadcast-address 10.78.4.255;
-    option domain-name-servers 10.78.5.2; # REVISI: Ganti ke Minastir
-
-    # Tidak perlu lease-time karena IP statis/server
-}
-
-# Fixed address for Khamul (di subnet 10.78.3.0/24)
-host khamul {
-    hardware ethernet 02:42:ab:01:c2:00;
-    fixed-address 10.78.3.95;
-
-    # Khamul juga harus tahu gateway dan DNS
-    option routers 10.78.3.1;
-    option domain-name-servers 10.78.5.2; # REVISI: Ganti ke Minastir
-}
-```
-Setelah itu, kita dapat restart DHCP Server dengan kode ini.
-```
-service isc-dhcp-server restart
+service named stop
+named -g &
 ```
 
 ### Pada Client
-Untuk client cukup ubah isi dari `/etc/resolv.conf` dengan kode ini.
+Kita cukup konfigurasi `/etc/resolv.conf`. Untuk isinya seperti ini.
 ```
-up echo nameserver 10.78.5.2 > /etc/resolv.conf
+nameserver 10.78.5.2
 ```
+Ini adalah IP dari Minastir.
 
 ### Uji Coba
-Kita akan lakukan uji coba di Client dan Durin. Kita bisa uji coba dengan
+Kita akn coba ping google dari client. Untuk kodenya seperti ini
 ```
-dig google.com
-curl http://facebook.com
+ping google.com
 ```
-Jika berhasil, maka akan muncul seperti ini.
+Dan jika berhasil maka akan muncul seperti ini.
 
-**Client**
-
-<img width="753" height="669" alt="image" src="https://github.com/user-attachments/assets/b5c41fae-63b3-49d2-acf4-eab5a16b4420" />
-
-
-**Durin**
-
-<img width="627" height="210" alt="image" src="https://github.com/user-attachments/assets/89fda29d-9092-4346-a8ad-443e226970e8" />
-
-
-### Error Handling
-| Jenis Error | Solusi |
-| --- | --- |
-| `dnsmasq: failed to create listening socket for port 53: Address already in use failed!` | `netstat -tuln \| grep 53` |
-| `curl: (7) Failed to connect... Could not connect to server` | `service nginx start` di Minastir |
+<img width="942" height="386" alt="Screenshot 2025-10-31 at 21 36 53" src="https://github.com/user-attachments/assets/f4420a38-eb80-4d82-9f7d-bb1a8391844c" />
 
 
 ## No. 4
