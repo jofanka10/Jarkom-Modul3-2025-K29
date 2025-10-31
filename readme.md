@@ -546,3 +546,138 @@ dig @10.78.3.4 Pharazon.K29.com
 ```
 Jika berhasil maka akan muncul seperti ini.
 
+## No. 5
+Pada soal ini, mual-mula kita akan melakukan config pada Erendis dan Amdir. Untuk kodenya seperti ini.
+
+### Erendis
+Pada file ini kita akan menambahkan zone transfer. Untuk kodenya seperti ini.
+`/etc/bind/named.conf.local`
+```
+zone "K29.com" {
+    type master;
+    file "/etc/bind/db.K29";
+    allow-transfer { 10.78.3.4; };  # IP Amdir (Slave)
+    notify yes;
+};
+
+zone "3.78.10.in-addr.arpa" {
+    type master;
+    file "/etc/bind/db.10.78.3";
+    allow-transfer { 10.78.3.4; };
+    notify yes;
+};
+```
+Lalu, kita akan mencari forward lookup menggunakan file ini. 
+`/etc/bind/db.K29`
+```
+$TTL    604800
+@       IN      SOA     ns1.K29.com. root.K29.com. (
+                     2025103109 ; Serial
+                      604800     ; Refresh
+                       86400     ; Retry
+                     2419200     ; Expire
+                      604800 )   ; Negative Cache TTL
+;
+
+; =====================
+; NS Records (Name Servers)
+; =====================
+@       IN      NS      ns1.K29.com.
+@       IN      NS      ns2.K29.com.
+
+; =====================
+; A Records (Address)
+; =====================
+ns1     IN      A       10.78.3.3
+ns2     IN      A       10.78.3.4
+@       IN      A       10.78.3.3       ; alamat utama domain K29.com
+
+; =====================
+; Aliases & TXT
+; =====================
+www     IN      CNAME   K29.com.
+Elros   IN      TXT     "Cincin Sauron"
+Pharazon        IN      TXT     "Aliansi Terakhir"
+```
+Selanjutnya, kita akan melakukan reverse lokup dengan 
+`/etc/bind/db.10.78`
+```
+$TTL    604800
+@       IN      SOA     ns1.K29.com. root.K29.com. (
+                     2025103107 ; Serial
+                      604800     ; Refresh
+                       86400     ; Retry
+                     2419200     ; Expire
+                      604800 )   ; Negative Cache TTL
+;
+@       IN      NS      ns1.K29.com.
+@       IN      NS      ns2.K29.com.
+
+; Reverse PTR records
+3       IN      PTR     Erendis.K29.com.
+4       IN      PTR     Amdir.K29.com.
+```
+Lalu, restart `bind9` menggunakan command ini.
+```
+pkill named
+named -u bind
+```
+
+### Amdir
+Kita akan jadikan Amdir sebagai DNS Slave. Untuk kodenya seperti ini.
+`nano /etc/bind/named.conf.local`
+```
+zone "K29.com" {
+    type slave;
+    masters { 10.78.3.3; };   # IP Erendis (master)
+    file "db.K29";
+};
+
+zone "10.78.in-addr.arpa" {
+    type slave;
+    masters { 10.78.3.3; };   # IP Erendis (master)
+    file "db.10.78";
+};
+```
+Lalu, restart `bind` menggunakan command ini.
+```
+pkill named
+named -u bind
+```
+
+### Pengujian
+Untuk menguji apakah ia berhasil, kita dapat menggunakan 5 parameter berikut.
+```
+dig @10.78.3.3 K29.com
+dig @10.78.3.4 K29.com
+dig -x 10.78.3.3 @10.78.3.3
+dig -x 10.78.3.4 @10.78.3.3
+dig TXT Elros.K29.com @10.78.3.3
+dig TXT Pharazon.K29.com @10.78.3.3
+```
+Jika berhasil maka akan muncul seperti ini.
+#### dig @10.78.3.3 K29.com
+![WhatsApp Image 2025-10-31 at 12 43 28](https://github.com/user-attachments/assets/22f5e020-16a3-40ab-a3a3-ae152dc764a8)
+
+
+#### dig @10.78.3.4 K29.com
+![WhatsApp Image 2025-10-31 at 12 43 42](https://github.com/user-attachments/assets/b4c7bd11-8dd4-462f-a633-7f457102564a)
+
+
+#### dig -x 10.78.3.3 @10.78.3.3
+![WhatsApp Image 2025-10-31 at 12 44 05](https://github.com/user-attachments/assets/a74de9ba-2923-4c8b-88ce-4c2d30e38f08)
+
+
+#### dig -x 10.78.3.4 @10.78.3.3
+![WhatsApp Image 2025-10-31 at 12 44 24](https://github.com/user-attachments/assets/f4608fa8-6ddf-41d5-96a0-6acf52aa9eb7)
+
+
+#### dig TXT Elros.K29.com @10.78.3.3
+![WhatsApp Image 2025-10-31 at 12 45 09](https://github.com/user-attachments/assets/d2169874-0a48-45a1-bcd5-ac131e4e2e98)
+
+
+#### dig TXT Pharazon.K29.com @10.78.3.3
+![WhatsApp Image 2025-10-31 at 12 49 12](https://github.com/user-attachments/assets/fb6aaa0d-ab2b-42d4-845f-2cb7fba65487)
+
+
+
