@@ -618,64 +618,80 @@ host khamul {
 Kita akan menginstal php84, composer dan nginx pada Ksatria Númenor. Untuk Instalasinya seperti ini.
 
 ### Elendil, Isdilur, Anarion
-Cek ping untuk memastikan bahwa ia terhubung ke internet.
 ```
-ping google.com -c 2
-```
-Menginstall sertifikat digital
-```
-apt update -y
-apt install ca-certificates apt-transport-https lsb-release wget curl unzip git -y
-```
-Download dan install PHP
-```
-# Tambah repository resmi PHP
-wget -qO - https://packages.sury.org/php/apt.gpg | apt-key add -
-echo "deb https://packages.sury.org/php/ $(lsb_release -sc) main" > /etc/apt/sources.list.d/sury-php.list
-apt update -y
+apt update
 
-# Install PHP 8.4 + ekstensi penting
-apt install php8.4 php8.4-fpm php8.4-cli php8.4-common php8.4-mbstring php8.4-xml php8.4-bcmath php8.4-zip php8.4-curl php8.4-mysql -y
-```
-Cek versi PHP
-```
-php -v
-```
-Download dan install Composer
-```
-curl -sS https://getcomposer.org/installer -o composer-setup.php
-php composer-setup.php --install-dir=/usr/local/bin --filename=composer
-composer -V
-```
-Download dan install nginx dan start nginx
-```
-apt install nginx -y
-nginx
-```
-### Install and Setup Blueprint Laravel
-```
+## /root/install_laravel.sh
+
+#!/bin/bash
+
+# Update
+apt update
+apt upgrade -y
+
+# Install nginx, php, dan dependencies
+apt install -y nginx curl wget git
+
+# Tambah repository PHP 8.4
+apt install -y software-properties-common
+add-apt-repository ppa:ondrej/php -y
+apt update
+apt install -y php8.4 php8.4-fpm php8.4-mysql php8.4-xml php8.4-curl php8.4-zip php8.4-mbstring php8.4-gd
+
+# Install Composer
+curl -sS https://getcomposer.org/installer | php
+mv composer.phar /usr/local/bin/composer
+chmod +x /usr/local/bin/composer
+
+# Start services tanpa systemctl
+service nginx start
+service php8.4-fpm start
+
+
+
+
+
+
+
+## /root/setup_laravel.sh
+
+#!/bin/bash
+
+# Hapus default nginx
+rm -rf /var/www/html/*
+
+# Clone project
 cd /var/www
-composer create-project laravel/laravel blueprint
-cd blueprint
+git clone https://github.com/elshiraphine/laravel-simple-rest-api.git
+mv laravel-simple-rest-api laravel-app
+cd laravel-app
+
+# Install dependencies
+composer install --no-dev
+
+# Set permissions
+chown -R www-data:www-data /var/www/laravel-app
+chmod -R 775 storage bootstrap/cache
+
+# Setup .env
+cp .env.example .env
 php artisan key:generate
-```
-### Konfigurasi nginx untuk Laravel
 
-Glosarium Penamaan Config
-| Node | IP Address | {x} | 
-| --- | --- | --- |
-| Elendil | 10.78.1.2 | 1 |
-| Isdilur | 10.78.1.3 | 2 |
-| Anarion | 10.78.1.4 | 3 |
 
-`/etc/nginx/sites-available/laravel{x}`
-```
+
+
+
+
+
+
+## /etc/nginx/sites-available/Laravel
+
 server {
-    listen 800{x};
+    listen 80;
     server_name _;
+    root /var/www/laravel-app/public;
 
-    root /var/www/blueprint/public;
-    index index.php index.html;
+    index index.php index.html index.htm;
 
     location / {
         try_files $uri $uri/ /index.php?$query_string;
@@ -683,103 +699,371 @@ server {
 
     location ~ \.php$ {
         include snippets/fastcgi-php.conf;
-        fastcgi_pass unix:/run/php/php8.4-fpm.sock;
+        fastcgi_pass unix:/var/run/php/php8.4-fpm.sock;
     }
 
     location ~ /\.ht {
         deny all;
     }
 }
-```
-```
-cd /var/www/blueprint
-chmod -R 775 storage bootstrap/cache
-chown -R www-data:www-data /var/www/blueprint
-```
-```
-php artisan cache:clear
-php artisan config:clear
-php artisan view:clear
-```
-### Aktifkan dan Reload nginx
-```
-ln -s /etc/nginx/sites-available/laravel /etc/nginx/sites-enabled/
-rm /etc/nginx/sites-enabled/default
-service nginx stop
-nginx
-```
 
-### Uji Coba
-Kita bisa coba kode ini dari client. Untuk kodenya seperti ini.
-```
-apt install lynx -y
-lynx http://10.78.1.2
-lynx http://10.78.1.3
-lynx http://10.78.1.4
-```
-```
-nano /var/www/blueprint/.env
-```
-```
-DB_CONNECTION=sqlite
-DB_DATABASE=/var/www/blueprint/database/database.sqlite
-```
-```
-touch /var/www/blueprint/database/database.sqlite
-chmod 666 /var/www/blueprint/database/database.sqlite
-```
-```
-php artisan config:clear
-php artisan cache:clear
-php artisan view:clear
-php artisan migrate
-```
-```
-php artisan tinker
->>> DB::connection()->getPdo();
-```
-```
-cd /var/www/blueprint/database
-```
-```
-sqlite3 database.sqlite
-```
-sqlite> .tables
-sqlite> SELECT * FROM users;
-sqlite> .exit
-```
-# Kalau database masih kosong (belum ada tabel), kamu bisa jalankan migrasi Laravel dulu:
 
-cd /var/www/blueprint
-php artisan migrate
-```
-Buat symlink
-```
-ln -s /etc/nginx/sites-available/laravel1 /etc/nginx/sites-enabled/
-ln -s /etc/nginx/sites-available/laravel2 /etc/nginx/sites-enabled/
-ln -s /etc/nginx/sites-available/laravel3 /etc/nginx/sites-enabled/
-```
-Cek konfigurasi
-```
+
+
+
+
+## /root/configure_nginx.sh
+
+#!/bin/bash
+
+# Backup default config
+cp /etc/nginx/sites-available/laravel /etc/nginx/sites-available/laravel.backup
+
+# Copy config kita
+cat > /etc/nginx/sites-available/laravel << 'EOF'
+server {
+    listen 80;
+    server_name _;
+    root /var/www/laravel-app/public;
+
+    index index.php index.html index.htm;
+
+    location / {
+        try_files $uri $uri/ /index.php?$query_string;
+    }
+
+    location ~ \.php$ {
+        include snippets/fastcgi-php.conf;
+        fastcgi_pass unix:/var/run/php/php8.4-fpm.sock;
+    }
+
+    location ~ /\.ht {
+        deny all;
+    }
+}
+EOF
+
+# Enable site
+ln -sf /etc/nginx/sites-available/laravel /etc/nginx/sites-enabled/
+rm -f /etc/nginx/sites-enabled/default
+
+# Test dan restart nginx
 nginx -t
-nginx -s reload
-ss -tuln | grep 800
+service nginx restart
+service php8.4-fpm restart
+
+
+
+
+
+chmod +x /root/install_laravel.sh
+chmod +x /root/setup_laravel.sh
+chmod +x /root/configure_nginx.sh
+
+/root/install_laravel.sh
+/root/setup_laravel.sh
+/root/configure_nginx.sh
+
+
+
+#!/bin/bash
+echo "=== Fix Composer untuk PHP 8.4 ==="
+
+cd /var/www/laravel-app
+
+# Hapus vendor dan composer.lock yang lama
+rm -rf vendor
+rm -f composer.lock
+
+# Update composer.json untuk kompatibel dengan PHP 8.4
+cat > composer.json << 'EOF'
+{
+    "name": "laravel/laravel",
+    "type": "project",
+    "description": "Laravel Simple REST API",
+    "keywords": ["framework", "laravel"],
+    "license": "MIT",
+    "require": {
+        "php": "^8.1",
+        "guzzlehttp/guzzle": "^7.2",
+        "laravel/framework": "^10.10",
+        "laravel/sanctum": "^3.2",
+        "laravel/tinker": "^2.8"
+    },
+    "require-dev": {
+        "fakerphp/faker": "^1.9.1",
+        "laravel/pint": "^1.0",
+        "laravel/sail": "^1.18",
+        "mockery/mockery": "^1.4.4",
+        "nunomaduro/collision": "^7.0",
+        "phpunit/phpunit": "^10.1",
+        "spatie/laravel-ignition": "^2.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": "app/",
+            "Database\\Factories\\": "database/factories/",
+            "Database\\Seeders\\": "database/seeders/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "post-autoload-dump": [
+            "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
+            "@php artisan package:discover --ansi"
+        ],
+        "post-update-cmd": [
+            "@php artisan vendor:publish --tag=laravel-assets --ansi --force"
+        ],
+        "post-root-package-install": [
+            "@php -r \"file_exists('.env') || copy('.env.example', '.env');\""
+        ],
+        "post-create-project-cmd": [
+            "@php artisan key:generate --ansi"
+        ]
+    },
+    "extra": {
+        "laravel": {
+            "dont-discover": []
+        }
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "preferred-install": "dist",
+        "sort-packages": true,
+        "allow-plugins": {
+            "pestphp/pest-plugin": true,
+            "php-http/discovery": true
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}
+EOF
+
+# Install ulang dependencies
+composer install --no-dev --optimize-autoloader
+
+# Setup permissions dan .env
+chown -R www-data:www-data /var/www/laravel-app
+chmod -R 775 storage bootstrap/cache
+
+cp .env.example .env
+php artisan key:generate
+
+echo "=== Composer fixed untuk PHP 8.4 ==="
+
+chmod +x /root/fix_composer.sh
+/root/fix_composer.sh
 ```
 
-### 
-### Error Handling
-1. Warning Trying to access array offset on null.
-   fix:
-   ```
-   nano /var/www/blueprint/.env
-   DB_CONNECTION=sqlite
-   DB_DATABASE=/var/www/blueprint/database/database.sqlite
-   touch /var/www/blueprint/database/database.sqlite
-   chmod 666 /var/www/blueprint/database/database.sqlite
-   php artisan config:clear
-   php artisan cache:clear
-   php artisan view:clear
-   DB::connection()->getPdo();
-   ```
+## No. 8
 
-3. sad
+Palantir – Install MariaDB dan Buat Database
+
+# Login ke Palantir
+ssh root@10.78.4.3
+
+# Update package list
+apt update
+
+# Install MariaDB
+apt install -y mariadb-server mariadb-client
+
+# Start MariaDB (jika systemctl tidak ada, jalankan manual)
+mysqld_safe --datadir=/var/lib/mysql &
+
+# Masuk ke MariaDB
+mysql -u root
+
+# Set password root (jika belum)
+ALTER USER 'root'@'localhost' IDENTIFIED BY 'rootpassword';
+FLUSH PRIVILEGES;
+
+# Buat database Laravel
+CREATE DATABASE ikan;
+
+### Buat user laravel dengan akses dari semua host
+#CREATE USER 'laravel'@'%' IDENTIFIED BY 'laravelpassword';
+#GRANT ALL PRIVILEGES ON ikan.* TO 'laravel'@'%';
+#FLUSH PRIVILEGES;
+
+mysql -u root -p
+CREATE USER 'laravel2'@'%' IDENTIFIED BY 'passwordBaru123';
+
+-- Beri semua akses ke database ikan
+GRANT ALL PRIVILEGES ON ikan.* TO 'laravel2'@'%';
+
+-- Apply perubahan
+FLUSH PRIVILEGES;
+
+EXIT;
+
+# Edit konfigurasi MariaDB supaya bisa diakses dari node lain
+nano /etc/mysql/mariadb.conf.d/50-server.cnf
+# Ganti:
+# bind-address = 0.0.0.0
+
+# Restart MariaDB
+# Jika systemctl: systemctl restart mariadb
+# Jika manual: killall mysqld; /usr/sbin/mysqld --user=mysql --datadir=/var/lib/mysql --socket=/var/run/mysqld/mysqld.sock &
+
+
+
+
+
+
+2. Worker Nodes (Elendil, Isildur, Anarion) – Install Nginx + PHP + Laravel
+
+# Login ke tiap worker
+ssh root@<worker-ip>
+
+# Update package list
+apt update
+
+# Install Nginx dan PHP
+apt install -y nginx php-fpm php-mysql php-cli php-xml composer unzip curl
+
+# Buat folder Laravel
+mkdir -p /var/www/blueprint
+cd /var/www/blueprint
+
+# Download Laravel
+# composer create-project laravel/laravel .
+
+# Set folder permission
+chown -R www-data:www-data /var/www/blueprint
+chmod -R 755 /var/www/blueprint
+
+# Copy .env dan update koneksi DB
+nano .env
+# Set:
+DB_CONNECTION=mysql
+DB_HOST=10.78.4.3
+DB_PORT=3306
+DB_DATABASE=ikan
+DB_USERNAME=laravel
+DB_PASSWORD=laravelpassword
+
+# Download MySQL
+apt update
+apt install -y mariadb-server
+
+
+# Test koneksi database
+mysql -u laravel -p -h 10.78.4.3 ikan
+# Masukkan password laravelpassword
+
+
+
+3. Jalankan Migration Laravel
+
+# Masih di folder Laravel
+php artisan migrate
+Jika muncul:
+INFO  Nothing to migrate.
+berarti database sudah siap
+
+
+
+
+4. Cek PHP + Nginx
+
+### Buat file info.php
+echo "<?php phpinfo(); ?>" > /var/www/blueprint/public/info.php
+
+### Jalankan curl untuk cek PHP info
+curl http://localhost:8001/info.php
+### Harus tampil halaman phpinfo
+
+
+
+
+5. Worker Nodes Lain
+
+
+### Login ke Isildur & Anarion
+ssh root@10.78.1.3
+ssh root@10.78.1.4
+
+### Pastikan folder Laravel sama
+cd /var/www/blueprint
+
+### Jalankan migration test
+php artisan migrate
+
+
+
+
+## No. 9
+Elendil
+```
+#!/bin/bash
+echo "=== Testing Laravel Workers ==="
+
+WORKERS=("elendil.k01.com:8001" "isildur.k01.com:8002" "anarion.k01.com:8003")
+
+for worker in "${WORKERS[@]}"; do
+    echo "Testing $worker..."
+    
+    # Test halaman utama
+    echo "=== Lynx $worker ==="
+    lynx -dump http://$worker | head -20
+    
+    # Test API endpoint
+    echo "=== API $worker/api/airing ==="
+    curl -s http://$worker/api/airing | head -5
+    
+    echo "----------------------------------------"
+done
+
+echo "=== Testing completed ==="
+```
+```
+# Check service di worker
+service nginx status
+service php8.4-fpm status
+
+# Check koneksi database dari worker
+cd /var/www/laravel-app
+php artisan tinker
+>>> DB::connection()->getPdo()
+```
+
+
+# Edit konfigurasi untuk pastikan pakai 127.0.0.1:9000
+cat > /etc/nginx/sites-available/laravel << 'EOF'
+server {
+    listen 8001;
+    server_name elendil.k29.com;
+    root /var/www/laravel-app/public;
+    index index.php index.html index.htm;
+
+    location / {
+        try_files $uri $uri/ /index.php?$query_string;
+    }
+
+    location ~ \.php$ {
+        include snippets/fastcgi-php.conf;
+        fastcgi_pass 127.0.0.1:9000;
+        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+        include fastcgi_params;
+    }
+}
+EOF
+```
+```
+# Install lynx dan curl jika belum
+apt update && apt install -y lynx curl
+
+# Test ke Elendil
+lynx http://elendil.k01.com:8001
+
+# Test API endpoint
+curl http://elendil.k01.com:8001/api/airing
+```
+
