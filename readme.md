@@ -847,15 +847,16 @@ rm -f /etc/nginx/sites-enabled/default
 nginx -t
 service nginx restart
 service php8.4-fpm restart
+```
 
 
 
-
-
+```
 chmod +x /root/install_laravel.sh
 chmod +x /root/setup_laravel.sh
 chmod +x /root/configure_nginx.sh
-
+```
+```
 /root/install_laravel.sh
 /root/setup_laravel.sh
 /root/configure_nginx.sh
