@@ -27,6 +27,9 @@ git clone https://github.com/elshiraphine/laravel-simple-rest-api.git
 mv laravel-simple-rest-api laravel-app
 cd laravel-app
 
+
+apt install composer
+composer update
 composer install --no-dev
 
 chown -R www-data:www-data /var/www/laravel-app
