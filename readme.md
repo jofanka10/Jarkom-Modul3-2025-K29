@@ -780,7 +780,7 @@ php artisan key:generate
 
 
 ```
-## /etc/nginx/sites-available/Laravel
+## /etc/nginx/sites-available/laravel
 
 server {
     listen 80;
