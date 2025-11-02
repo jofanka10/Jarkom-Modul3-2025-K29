@@ -862,6 +862,18 @@ chmod +x /root/configure_nginx.sh
 /root/configure_nginx.sh
 ```
 
+
+Uji coba
+```
+apt update
+apt install lynx -y
+
+
+lynx http://10.78.1.2
+lynx http://10.78.1.3
+lynx http://10.78.1.4
+```
+
 ## No. 8
 
 Palantir – Install MariaDB dan Buat Database
