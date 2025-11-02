@@ -960,70 +960,13 @@ curl http://elendil.K29.com:8001/api/airing
 
 
 ## No. 9
-Elendil
-```
-#!/bin/bash
-echo "=== Testing Laravel Workers ==="
-
-WORKERS=("elendil.k01.com:8001" "isildur.k01.com:8002" "anarion.k01.com:8003")
-
-for worker in "${WORKERS[@]}"; do
-    echo "Testing $worker..."
-    
-    # Test halaman utama
-    echo "=== Lynx $worker ==="
-    lynx -dump http://$worker | head -20
-    
-    # Test API endpoint
-    echo "=== API $worker/api/airing ==="
-    curl -s http://$worker/api/airing | head -5
-    
-    echo "----------------------------------------"
-done
-
-echo "=== Testing completed ==="
-```
-```
-# Check service di worker
-service nginx status
-service php8.4-fpm status
-
-# Check koneksi database dari worker
-cd /var/www/laravel-app
-php artisan tinker
->>> DB::connection()->getPdo()
-```
-
-
-# Edit konfigurasi untuk pastikan pakai 127.0.0.1:9000
-cat > /etc/nginx/sites-available/laravel << 'EOF'
-server {
-    listen 8001;
-    server_name elendil.k29.com;
-    root /var/www/laravel-app/public;
-    index index.php index.html index.htm;
-
-    location / {
-        try_files $uri $uri/ /index.php?$query_string;
-    }
-
-    location ~ \.php$ {
-        include snippets/fastcgi-php.conf;
-        fastcgi_pass 127.0.0.1:9000;
-        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
-        include fastcgi_params;
-    }
-}
-EOF
-```
-```
-# Install lynx dan curl jika belum
+### Install lynx dan curl jika belum
 apt update && apt install -y lynx curl
 
-# Test ke Elendil
+### Test ke Elendil
 lynx http://elendil.k01.com:8001
 
-# Test API endpoint
+### Test API endpoint
 curl http://elendil.k01.com:8001/api/airing
 ```
 
