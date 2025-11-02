@@ -876,140 +876,87 @@ lynx http://10.78.1.4
 
 ## No. 8
 
-Palantir – Install MariaDB dan Buat Database
+8
 
-# Login ke Palantir
-ssh root@10.78.4.3
 
-# Update package list
+### Palantir
+
 apt update
+apt install mariadb-server -y
 
-# Install MariaDB
-apt install -y mariadb-server mariadb-client
+nano /etc/mysql/mariadb.conf.d/50-server.cnf
 
-# Start MariaDB (jika systemctl tidak ada, jalankan manual)
-mysqld_safe --datadir=/var/lib/mysql &
+bind-address = 0.0.0.0
 
-# Masuk ke MariaDB
+service mariadb start
+
 mysql -u root
 
-# Set password root (jika belum)
-ALTER USER 'root'@'localhost' IDENTIFIED BY 'rootpassword';
-FLUSH PRIVILEGES;
-
-# Buat database Laravel
 CREATE DATABASE ikan;
-
-### Buat user laravel dengan akses dari semua host
-#CREATE USER 'laravel'@'%' IDENTIFIED BY 'laravelpassword';
-#GRANT ALL PRIVILEGES ON ikan.* TO 'laravel'@'%';
-#FLUSH PRIVILEGES;
-
-mysql -u root -p
 CREATE USER 'laravel2'@'%' IDENTIFIED BY 'passwordBaru123';
-
--- Beri semua akses ke database ikan
 GRANT ALL PRIVILEGES ON ikan.* TO 'laravel2'@'%';
-
--- Apply perubahan
 FLUSH PRIVILEGES;
-
 EXIT;
 
-# Edit konfigurasi MariaDB supaya bisa diakses dari node lain
-nano /etc/mysql/mariadb.conf.d/50-server.cnf
-# Ganti:
-# bind-address = 0.0.0.0
+netstat -tlnp | grep 3306
 
-# Restart MariaDB
-# Jika systemctl: systemctl restart mariadb
-# Jika manual: killall mysqld; /usr/sbin/mysqld --user=mysql --datadir=/var/lib/mysql --socket=/var/run/mysqld/mysqld.sock &
+### Elendil
 
+cd /var/www/laravel-app
 
-
-
-
-
-2. Worker Nodes (Elendil, Isildur, Anarion) – Install Nginx + PHP + Laravel
-
-# Login ke tiap worker
-ssh root@<worker-ip>
-
-# Update package list
-apt update
-
-# Install Nginx dan PHP
-apt install -y nginx php-fpm php-mysql php-cli php-xml composer unzip curl
-
-# Buat folder Laravel
-mkdir -p /var/www/blueprint
-cd /var/www/blueprint
-
-# Download Laravel
-# composer create-project laravel/laravel .
-
-# Set folder permission
-chown -R www-data:www-data /var/www/blueprint
-chmod -R 755 /var/www/blueprint
-
-# Copy .env dan update koneksi DB
 nano .env
-# Set:
+
 DB_CONNECTION=mysql
-DB_HOST=10.78.4.3
+DB_HOST=10.78.4.3          # IP Palantir
 DB_PORT=3306
-DB_DATABASE=ikan
-DB_USERNAME=laravel
-DB_PASSWORD=laravelpassword
+DB_DATABASE=ikan           # Database Anda
+DB_USERNAME=laravel2       # User Anda
+DB_PASSWORD=passwordBaru123  # Password Anda
 
-# Download MySQL
-apt update
-apt install -y mariadb-server
+php artisan migrate --seed
 
+### Elendil, Isdilur, Anarion
 
-# Test koneksi database
-mysql -u laravel -p -h 10.78.4.3 ikan
-# Masukkan password laravelpassword
+nano /etc/nginx/sites-available/laravel
 
+# BLOK 1: Menangkap akses IP (dan menolaknya)
+server {
+    listen 8001 default_server; # Port Elendil 
+    listen [::]:8001 default_server;
+    server_name _; 
+    return 404; # Tolak akses IP [cite: 102]
+}
 
+# BLOK 2: Menerima akses Domain
+server {
+    listen 8001;
+    listen [::]:8001;
+    server_name elendil.K29.com; # Domain Elendil
 
-3. Jalankan Migration Laravel
+    root /var/www/laravel-app/public; # Folder proyek Anda
+    index index.php index.html index.htm;
 
-# Masih di folder Laravel
-php artisan migrate
-Jika muncul:
-INFO  Nothing to migrate.
-berarti database sudah siap
+    location / {
+        try_files $uri $uri/ /index.php?$query_string;
+    }
+    location ~ \.php$ {
+        include snippets/fastcgi-php.conf;
+        fastcgi_pass unix:/var/run/php/php8.4-fpm.sock;
+    }
+}
 
-
-
-
-4. Cek PHP + Nginx
-
-### Buat file info.php
-echo "<?php phpinfo(); ?>" > /var/www/blueprint/public/info.php
-
-### Jalankan curl untuk cek PHP info
-curl http://localhost:8001/info.php
-### Harus tampil halaman phpinfo
-
-
-
-
-5. Worker Nodes Lain
-
-
-### Login ke Isildur & Anarion
-ssh root@10.78.1.3
-ssh root@10.78.1.4
-
-### Pastikan folder Laravel sama
-cd /var/www/blueprint
-
-### Jalankan migration test
-php artisan migrate
+nginx -t  # Pastikan "syntax is ok"
+service nginx restart
 
 
+### Amandil
+
+
+echo "nameserver 10.78.3.3" > /etc/resolv.conf
+
+curl -I http://10.78.1.2:8001
+
+curl http://elendil.K29.com:8001/api/airing
 
 
 ## No. 9
