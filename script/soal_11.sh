@@ -1,5 +1,3 @@
-11
-
 ### Amandil
 
 echo "nameserver 10.78.5.2" > /etc/resolv.conf
