@@ -1,46 +1,39 @@
-#TAMBAH X-REAL-IP HEADER
+15
 
-#Node: Galadriel, Celeborn, Oropher
+### 10.78.2.5, 10.78.2.6, 10.78.2.7
 
-nano /root/setup_php_realip_15.sh
+nano /etc/nginx/sites-available/default
+```
+location ~ \.php$ {
+    include snippets/fastcgi-php.conf;
+    fastcgi_pass unix:/var/run/php/php8.4-fpm.sock;
 
-#!/bin/bash
-echo "=== Soal 15: Tambah X-Real-IP Header ==="
-
-# Update index.php untuk tampilkan IP
-cat > /var/www/html/index.php << 'EOF'
-<?php
-echo "<h1>Halo dari: " . gethostname() . "</h1>";
-echo "<p>IP Pengunjung: " . ($_SERVER['HTTP_X_REAL_IP'] ?? $_SERVER['REMOTE_ADDR']) . "</p>";
-?>
-EOF
-
-# Update config nginx dengan X-Real-IP
-cat > /etc/nginx/sites-available/php-worker << 'EOF'
-server {
-    listen 8004;
-    server_name _;
-    root /var/www/html;
-    index index.php;
-
-    location / {
-        try_files $uri $uri/ =404;
-        auth_basic "Restricted Area";
-        auth_basic_user_file /etc/nginx/.htpasswd;
-    }
-
-    location ~ \.php$ {
-        include snippets/fastcgi-php.conf;
-        fastcgi_pass unix:/var/run/php/php8.4-fpm.sock;
-        fastcgi_param HTTP_X_REAL_IP $remote_addr;
-        auth_basic "Restricted Area";
-        auth_basic_user_file /etc/nginx/.htpasswd;
-    }
+    # TAMBAHKAN BARIS INI (Soal 121)
+    fastcgi_param X-Real-IP $remote_addr;
 }
-EOF
 
-# Restart nginx
-nginx -s stop
-nginx
+```
+Restart nginx
+```
+nginx -t
+service nginx restart
+```
+nano /var/www/html/index.php
+```
+<?php
+    // Ambil IP asli dari parameter Nginx
+    // Gunakan '??' untuk memberi nilai default jika header tidak ada
+    $ip_asli = $_SERVER['X-Real-IP'] ?? 'Tidak Dikenali';
 
-echo "=== Soal 15 selesai: X-Real-IP Header ditambahkan ==="
+    echo 'Halo, ini adalah ' . gethostname() . '. IP Asli Anda: ' . $ip_asli;
+?>
+```
+
+### Uji Coba di Client (Amandil)
+Pstikan
+```
+echo "nameserver 10.78.3.3" > /etc/resolv.conf
+curl --user "noldor:silvan" http://galadriel.K29.com:8004
+```
+
+
