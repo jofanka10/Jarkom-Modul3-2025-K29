@@ -1,42 +1,50 @@
-#TAMBAH BASIC AUTH
+13 dan 14
 
-#Node: Galadriel, Celeborn, Oropher
+### 10.78.2.5, 10.78.2.6, 10.78.2.7
 
-nano /root/setup_php_auth_14.sh
+apt update && apt install apache2-utils -y
+htpasswd -cb /etc/nginx/.htpasswd noldor silvan
+nano /etc/nginx/sites-available/default
 
-#!/bin/bash
-echo "=== Soal 14: Tambah Basic Auth ==="
+```
+# BLOK 1: Menangkap akses IP (dan menolaknya) 
+server {
+    listen 8004 default_server; # Port Galadriel 
+    listen [::]:8004 default_server;
+    server_name _; 
+    return 404; 
+}
 
-apt install -y apache2-utils
-
-# Buat password file (user: noldor, pass: silvan)
-echo 'noldor:$apr1$4d6L8WjS$uZh/.Qz9jJn7H7dJ8HvDk.' > /etc/nginx/.htpasswd
-
-# Update config nginx dengan auth
-cat > /etc/nginx/sites-available/php-worker << 'EOF'
+# BLOK 2: Menerima akses Domain (dengan password)
 server {
     listen 8004;
-    server_name _;
+    listen [::]:8004;
+    server_name galadriel.K29.com; # Domain Galadriel 
+
     root /var/www/html;
-    index index.php;
+    index index.php index.html index.htm;
+
+    # Soal 120: Basic HTTP Authentication
+    auth_basic "Taman Terlarang";
+    auth_basic_user_file /etc/nginx/.htpasswd;
 
     location / {
-        try_files $uri $uri/ =404;
-        auth_basic "Restricted Area";
-        auth_basic_user_file /etc/nginx/.htpasswd;
+        try_files $uri $uri/ /index.php?$query_string;
     }
 
     location ~ \.php$ {
         include snippets/fastcgi-php.conf;
         fastcgi_pass unix:/var/run/php/php8.4-fpm.sock;
-        auth_basic "Restricted Area";
-        auth_basic_user_file /etc/nginx/.htpasswd;
     }
 }
-EOF
+```
+Restart nginx
+```
+nginx -t  # Pastikan "syntax is ok"
+service nginx restart
+```
 
-# Restart nginx
-nginx -s stop
-nginx
-
-echo "=== Soal 14 selesai: Basic Auth ditambahkan ==="
+### Client (Amandil)
+curl -I http://10.78.2.5:8004
+curl -I http://galadriel.K29.com:8004
+curl --user "noldor:silvan" http://galadriel.K29.com:8004
