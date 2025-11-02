@@ -646,126 +646,12 @@ chmod +x /usr/local/bin/composer
 # Start services tanpa systemctl
 service nginx start
 service php8.4-fpm start
+```
 
 
+### ke 2
 
-
-
-
-
-## /root/setup_laravel.sh
-
-#!/bin/bash
-
-# Hapus default nginx
-rm -rf /var/www/html/*
-
-# Clone project
-cd /var/www
-git clone https://github.com/elshiraphine/laravel-simple-rest-api.git
-mv laravel-simple-rest-api laravel-app
-cd laravel-app
-
-# Install dependencies
-composer install --no-dev
-
-# Set permissions
-chown -R www-data:www-data /var/www/laravel-app
-chmod -R 775 storage bootstrap/cache
-
-# Setup .env
-cp .env.example .env
-php artisan key:generate
-
-
-
-
-
-
-
-
-## /etc/nginx/sites-available/Laravel
-
-server {
-    listen 80;
-    server_name _;
-    root /var/www/laravel-app/public;
-
-    index index.php index.html index.htm;
-
-    location / {
-        try_files $uri $uri/ /index.php?$query_string;
-    }
-
-    location ~ \.php$ {
-        include snippets/fastcgi-php.conf;
-        fastcgi_pass unix:/var/run/php/php8.4-fpm.sock;
-    }
-
-    location ~ /\.ht {
-        deny all;
-    }
-}
-
-
-
-
-
-
-## /root/configure_nginx.sh
-
-#!/bin/bash
-
-# Backup default config
-cp /etc/nginx/sites-available/laravel /etc/nginx/sites-available/laravel.backup
-
-# Copy config kita
-cat > /etc/nginx/sites-available/laravel << 'EOF'
-server {
-    listen 80;
-    server_name _;
-    root /var/www/laravel-app/public;
-
-    index index.php index.html index.htm;
-
-    location / {
-        try_files $uri $uri/ /index.php?$query_string;
-    }
-
-    location ~ \.php$ {
-        include snippets/fastcgi-php.conf;
-        fastcgi_pass unix:/var/run/php/php8.4-fpm.sock;
-    }
-
-    location ~ /\.ht {
-        deny all;
-    }
-}
-EOF
-
-# Enable site
-ln -sf /etc/nginx/sites-available/laravel /etc/nginx/sites-enabled/
-rm -f /etc/nginx/sites-enabled/default
-
-# Test dan restart nginx
-nginx -t
-service nginx restart
-service php8.4-fpm restart
-
-
-
-
-
-chmod +x /root/install_laravel.sh
-chmod +x /root/setup_laravel.sh
-chmod +x /root/configure_nginx.sh
-
-/root/install_laravel.sh
-/root/setup_laravel.sh
-/root/configure_nginx.sh
-
-
-
+```
 #!/bin/bash
 echo "=== Fix Composer untuk PHP 8.4 ==="
 
@@ -859,6 +745,120 @@ echo "=== Composer fixed untuk PHP 8.4 ==="
 
 chmod +x /root/fix_composer.sh
 /root/fix_composer.sh
+```
+
+
+```
+## /root/setup_laravel.sh
+
+#!/bin/bash
+
+# Hapus default nginx
+rm -rf /var/www/html/*
+
+# Clone project
+cd /var/www
+git clone https://github.com/elshiraphine/laravel-simple-rest-api.git
+mv laravel-simple-rest-api laravel-app
+cd laravel-app
+
+# Install dependencies
+composer install --no-dev
+
+# Set permissions
+chown -R www-data:www-data /var/www/laravel-app
+chmod -R 775 storage bootstrap/cache
+
+# Setup .env
+cp .env.example .env
+php artisan key:generate
+```
+
+
+
+
+
+
+```
+## /etc/nginx/sites-available/Laravel
+
+server {
+    listen 80;
+    server_name _;
+    root /var/www/laravel-app/public;
+
+    index index.php index.html index.htm;
+
+    location / {
+        try_files $uri $uri/ /index.php?$query_string;
+    }
+
+    location ~ \.php$ {
+        include snippets/fastcgi-php.conf;
+        fastcgi_pass unix:/var/run/php/php8.4-fpm.sock;
+    }
+
+    location ~ /\.ht {
+        deny all;
+    }
+}
+```
+
+
+
+
+
+## /root/configure_nginx.sh
+```
+#!/bin/bash
+
+# Backup default config
+cp /etc/nginx/sites-available/laravel /etc/nginx/sites-available/laravel.backup
+
+# Copy config kita
+cat > /etc/nginx/sites-available/laravel << 'EOF'
+server {
+    listen 80;
+    server_name _;
+    root /var/www/laravel-app/public;
+
+    index index.php index.html index.htm;
+
+    location / {
+        try_files $uri $uri/ /index.php?$query_string;
+    }
+
+    location ~ \.php$ {
+        include snippets/fastcgi-php.conf;
+        fastcgi_pass unix:/var/run/php/php8.4-fpm.sock;
+    }
+
+    location ~ /\.ht {
+        deny all;
+    }
+}
+EOF
+
+# Enable site
+ln -sf /etc/nginx/sites-available/laravel /etc/nginx/sites-enabled/
+rm -f /etc/nginx/sites-enabled/default
+
+# Test dan restart nginx
+nginx -t
+service nginx restart
+service php8.4-fpm restart
+
+
+
+
+
+chmod +x /root/install_laravel.sh
+chmod +x /root/setup_laravel.sh
+chmod +x /root/configure_nginx.sh
+
+/root/install_laravel.sh
+/root/setup_laravel.sh
+/root/configure_nginx.sh
 ```
 
 ## No. 8
