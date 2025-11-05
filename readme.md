@@ -1272,12 +1272,17 @@ location ~ \.php$ {
     fastcgi_pass unix:/var/run/php/php8.4-fpm.sock;
 }
 ```
-### Uji Coba di Amandil
+
+Lalu, kita akan restart nginx.
+
 ```
 nginx -t  # Pastikan "syntax is ok"
 service nginx restart
 service php8.4-fpm restart
 ```
+
+### Uji Coba di Amandil
+
 ```
 # Tes Galadriel (10.78.2.5)
 curl http://10.78.2.5
@@ -1288,6 +1293,11 @@ curl http://10.78.2.6
 # Tes Oropher (10.78.2.7)
 curl http://10.78.2.7
 ```
+
+Jika berhasil, maka akan muncul seperti ini.
+
+<img width="803" height="188" alt="image" src="https://github.com/user-attachments/assets/c0ce76b4-2539-4890-b4d4-dd391d3680da" />
+
 
 ## No. 15
 ### 10.78.2.5, 10.78.2.6, 10.78.2.7
