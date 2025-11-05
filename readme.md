@@ -865,48 +865,79 @@ lynx http://10.78.1.4
 
 ## No. 8
 
-8
-
-
 ### Palantir
 
+Kita akan install MariaDB di Palantir. Untuk kodenya seperti ini.
+```
 apt update
 apt install mariadb-server -y
+```
 
-nano /etc/mysql/mariadb.conf.d/50-server.cnf
-
+Lalu, kita akan konfigurasi isi file ini.
+`/etc/mysql/mariadb.conf.d/50-server.cnf`
+```
+# ubah bind-adreess menjadi seperti ini.
 bind-address = 0.0.0.0
+```
 
+Setelah itu, start service MariaDB.
+```
 service mariadb start
-
 mysql -u root
+```
 
+Jika sudah muncul 
+<img width="941" height="222" alt="image" src="https://github.com/user-attachments/assets/5b437ad4-3526-4eda-9ecf-3d1b5853ec93" />
+
+
+Maka masukkan kode berikut untuk membuat database.
+```
 CREATE DATABASE ikan;
 CREATE USER 'laravel2'@'%' IDENTIFIED BY 'passwordBaru123';
 GRANT ALL PRIVILEGES ON ikan.* TO 'laravel2'@'%';
 FLUSH PRIVILEGES;
 EXIT;
+```
 
+Jika sudah, cek apakah service sudah berjalan.
+```
 netstat -tlnp | grep 3306
+```
 
-### Elendil
+Jika muncul seperti ini
 
+<img width="944" height="88" alt="image" src="https://github.com/user-attachments/assets/89b81600-9832-4273-8e6e-af0d293a83fd" />
+
+berarti servicenya telah berjalan.
+
+
+### Elendil, Isildur, Anarion
+
+Sesuai database yang telah dibuat, kita akan config file ini.
+```
+# Masuk ke Folder
 cd /var/www/laravel-app
-
-nano .env
-
+```
+Untuk nama file dan isinya seperti ini.
+`.env`
+```
 DB_CONNECTION=mysql
 DB_HOST=10.78.4.3          # IP Palantir
 DB_PORT=3306
 DB_DATABASE=ikan           # Database Anda
 DB_USERNAME=laravel2       # User Anda
 DB_PASSWORD=passwordBaru123  # Password Anda
-
+```
+Jika sudah, save dan jalankan migrasi.
+```
 php artisan migrate --seed
+```
 
-### Elendil, Isdilur, Anarion
 
-nano /etc/nginx/sites-availablen/laravel
+lalu, kita akan modifikasi file ini.
+
+**Sesuaikan listen dan server_name sesuai ketentuan.**
+`nano /etc/nginx/sites-available/laravel`
 ```
 # BLOK 1: Menangkap akses IP (dan menolaknya)
 server {
@@ -934,10 +965,13 @@ server {
     }
 }
 ```
+
+Setelah itu, uji dan restart nginx.
 ```
 nginx -t  # Pastikan "syntax is ok"
 service nginx restart
 ```
+
 ### Erendis
 Ubah isi file ini.
 `/etc/bind/db.K29`
@@ -994,8 +1028,12 @@ named -u bind
 Pastikan ada `nameserver 10.78.3.3` di `/etc/resolv.conf`. Lalu, kita bisa gunakan kode ini untuk pengujian.
 ```
 curl -I http://10.78.1.2:8001
+curl -I http://10.78.1.3:8002
+curl -I http://10.78.1.4:8003
 
 curl http://elendil.K29.com:8001/api/airing
+curl http://isildur.K29.com:8002/api/airing
+curl http://anarion.K29.com:8003/api/airing
 ```
 
 ## No. 9
@@ -1003,10 +1041,14 @@ curl http://elendil.K29.com:8001/api/airing
 apt update && apt install -y lynx curl
 
 ### Test ke Elendil
+```
 lynx http://elendil.k01.com:8001
-
+```
 ### Test API endpoint
-curl http://elendil.k01.com:8001/api/airing
+```
+curl http://elendil.K29.com:8001/api/airing
+curl http://isildur.K29.com:8002/api/airing
+curl http://anarion.K29.com:8003/api/airing
 ```
 
 ## No. 10
