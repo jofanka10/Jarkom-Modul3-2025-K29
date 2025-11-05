@@ -1426,16 +1426,18 @@ Jika berhasil, maka akan muncul seperti ini.
 ![WhatsApp Image 2025-11-05 at 23 28 13](https://github.com/user-attachments/assets/f7f96560-4327-46e6-a2ab-d2b5d46a9c43)
 
 ## No. 16
-16
 
 ### Pharazon
 
-# (Ganti DNS ke Minastir '10.78.5.2' jika perlu install)
+Kita akan install nginx di Pharazon. Untuk kodenya seperti ini.
+```
 apt update
 apt install nginx -y
+```
 
-nano /etc/nginx/sites-available/load_balancer_peri
+Lalu, kita akan config file ini.
 
+`nano /etc/nginx/sites-available/load_balancer_peri`
 ```
 # Soal 125: Buat upstream Kesatria_Lorien
 upstream Kesatria_Lorien {
@@ -1471,23 +1473,34 @@ server {
 }
 ```
 
+Setelah itu, kita akan aktifkan file tersebut.
 ```
-# 1. Aktifkan file baru kita
 ln -s /etc/nginx/sites-available/load_balancer_peri /etc/nginx/sites-enabled/
+```
 
-# 2. Hapus link default (jika ada)
+Lalu, kita hapus link default (jika ada)
+```
 rm -f /etc/nginx/sites-enabled/default
+```
 
-# 3. Tes konfigurasi
+Selanjutnya, kita akan tes konfigurasi dan restart nginx. Untuk kodenya seperti ini.
+```
+# Tes konfigurasi
 nginx -t
 
-# 4. Jika "syntax is ok", restart Nginx
+# Jika "syntax is ok", restart Nginx
 service nginx restart
 ```
 
 ### Uji Coba di Client
+
+Sebelum mengujinya, kita perlu pastikan nameserver dengan benar di Client.
 ```
 echo "nameserver 10.78.3.3" > /etc/resolv.conf
+```
+
+Lalu, kita akna uji coba dengan kode ini.
+```
 curl --user "noldor:silvan" http://pharazon.K29.com
 ```
 
