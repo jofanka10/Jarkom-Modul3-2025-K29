@@ -906,8 +906,8 @@ php artisan migrate --seed
 
 ### Elendil, Isdilur, Anarion
 
-nano /etc/nginx/sites-available/laravel
-
+nano /etc/nginx/sites-availablen/laravel
+```
 # BLOK 1: Menangkap akses IP (dan menolaknya)
 server {
     listen 8001 default_server; # Port Elendil 
@@ -933,20 +933,70 @@ server {
         fastcgi_pass unix:/var/run/php/php8.4-fpm.sock;
     }
 }
-
+```
+```
 nginx -t  # Pastikan "syntax is ok"
 service nginx restart
+```
+### Erendis
+Ubah isi file ini.
+`/etc/bind/db.K29`
+```
+$TTL    604800
+@       IN      SOA     ns1.K29.com. root.K29.com. (
+                        2025103110 ; Serial (PENTING: UBAH ANGKA INI! NAIKKAN 1)
+                         604800     ; Refresh
+                          86400     ; Retry
+                        2419200     ; Expire
+                         604800 )   ; Negative Cache TTL
+;
 
+; =====================
+; NS Records (Name Servers)
+; =====================
+@       IN      NS      ns1.K29.com.
+@       IN      NS      ns2.K29.com.
 
-### Amandil
+; =====================
+; A Records (Address)
+; =====================
+ns1     IN      A       10.78.3.3
+ns2     IN      A       10.78.3.4
+@       IN      A       10.78.3.3       ; alamat utama domain K29.com
 
+; [cite_start]===== INI BAGIAN YANG HILANG DARI SOAL #4 [cite: 86] =====
+Palantir  IN    A       10.78.4.3
+Elros     IN    A       10.78.1.7
+Pharazon  IN    A       10.78.2.4
+Elendil   IN    A       10.78.1.2  
+Isildur   IN    A       10.78.1.3
+Anarion   IN    A       10.78.1.4
+Galadriel IN    A       10.78.2.5
+Celeborn  IN    A       10.78.2.6
+Oropher   IN    A       10.78.2.7
+; ==============================================
 
-echo "nameserver 10.78.3.3" > /etc/resolv.conf
+; =====================
+; [cite_start]Aliases & TXT (Dari Soal #5 [cite: 88, 90])
+; =====================
+www       IN    CNAME   K29.com.
+Elros     IN    TXT     "Cincin Sauron"
+Pharazon  IN    TXT     "Aliansi Terakhir"
+```
+Lalu, restart bind9 dengan kode ini.
 
+```
+pkill named
+named -u bind
+```
+
+### Uji Coba pada Client
+Pastikan ada `nameserver 10.78.3.3` di `/etc/resolv.conf`. Lalu, kita bisa gunakan kode ini untuk pengujian.
+```
 curl -I http://10.78.1.2:8001
 
 curl http://elendil.K29.com:8001/api/airing
-
+```
 
 ## No. 9
 ### Install lynx dan curl jika belum
