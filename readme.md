@@ -1298,7 +1298,20 @@ Jika berhasil, maka akan muncul seperti ini.
 
 <img width="803" height="188" alt="image" src="https://github.com/user-attachments/assets/c0ce76b4-2539-4890-b4d4-dd391d3680da" />
 
-## No. 13 dan 14
+## No. 13
+### Galadriel, Celeborn, dan Oropher
+Kita akan memasukkan sebuah kode ke dalam file index.php. Untuk kodenya seperti ini.
+```
+echo '<?php echo "PHP Test: " . gethostname() . " - Time: " . date("H:i:s"); ?>' > /var/www/html/test.php
+```
+
+### Uji Coba pada Client
+
+Jika berhasil, maka akan muncul seperti ini.
+
+![WhatsApp Image 2025-11-05 at 23 18 45](https://github.com/user-attachments/assets/34b6653a-d85a-4175-93de-1ac1b704eba7)
+
+## No. 14
 
 Pada soal ini, mula-mula kita akan install apache2-utils pada Galadriel, Celeborn, dan Oropher. Untuk kodenya seperti ini.
 
@@ -1309,44 +1322,42 @@ apt update && apt install apache2-utils -y
 
 Lalu, kita setting credential seperti ini.
 ```
-htpasswd -cb /etc/nginx/.htpasswd noldor silvan
+echo 'noldor:$apr1$4d6L8WjS$uZh/.Qz9jJn7H7dJ8HvDk.' > /etc/nginx/.htpasswd
 ```
 
 Setelah itu, kita akan konfigurasi file ini.
 
 **Ubah server_name (kedua dari atas) dan listen sesuai dengan ketentuan.**
-`/etc/nginx/sites-available/default`
 ```
-# BLOK 1: Menangkap akses IP (dan menolaknya) 
+cat > /etc/nginx/sites-available/php-worker << 'EOF'
+# Default server block untuk menangani request tanpa domain
 server {
-    listen 8004 default_server; # Port Galadriel 
-    listen [::]:8004 default_server;
-    server_name _; 
-    return 404; 
+    listen 8004 default_server;
+    server_name _;
+    return 444;
 }
 
-# BLOK 2: Menerima akses Domain (dengan password)
+# Server block untuk domain galadriel.k29.com
 server {
     listen 8004;
-    listen [::]:8004;
-    server_name galadriel.K29.com; # Domain Galadriel 
-
+    server_name galadriel.k29.com;
     root /var/www/html;
     index index.php index.html index.htm;
 
-    # Soal 120: Basic HTTP Authentication
-    auth_basic "Taman Terlarang";
-    auth_basic_user_file /etc/nginx/.htpasswd;
-
     location / {
-        try_files $uri $uri/ /index.php?$query_string;
+        try_files $uri $uri/ =404;
+        auth_basic "Restricted Area";
+        auth_basic_user_file /etc/nginx/.htpasswd;
     }
 
     location ~ \.php$ {
         include snippets/fastcgi-php.conf;
         fastcgi_pass unix:/var/run/php/php8.4-fpm.sock;
+        auth_basic "Restricted Area";
+        auth_basic_user_file /etc/nginx/.htpasswd;
     }
 }
+EOF
 ```
 
 Setelah itu, kita restart nginx.
@@ -1355,13 +1366,21 @@ nginx -t  # Pastikan "syntax is ok"
 service nginx restart
 ```
 
+### Uji Coba di Client
+Kita akan uji coba menggunakan credential. Untuk kodenya seperti ini.
+```
+echo "Test: curl -u noldor:silvan http://galadriel.k29.com:8004"
+```
 Jika berhasil maka akan muncul seperti ini.
 
-![WhatsApp Image 2025-11-05 at 23 18 45](https://github.com/user-attachments/assets/34b6653a-d85a-4175-93de-1ac1b704eba7)
+#### Tanpa Credential
+![WhatsApp Image 2025-11-05 at 23 23 54](https://github.com/user-attachments/assets/0fb48029-fee0-4f95-b436-26eae7f28da0)
 
 
-### Uji Coba pada Client
-Lalu, pada client, kita uji dengan kode berikut.
+#### Dengan Credential
+![WhatsApp Image 2025-11-05 at 23 24 50](https://github.com/user-attachments/assets/f30b5458-ffcf-41b7-b4a8-bb7805bf23fa)
+
+
 ## No. 15
 ### 10.78.2.5, 10.78.2.6, 10.78.2.7
 
