@@ -1534,3 +1534,13 @@ Selanjutnya, kita akan simulasi worker down dengan mematikan nginx di Galadriel.
 ```
 ab -n 100 -c 10 -A noldor:silvan http://pharazon.k29.com/
 ```
+
+Untuk cek hasillnya menggunakan kode ini.
+```
+tial -f /var/log/nginx/access.log
+```
+
+Jika berhasil, maka akan muncul seperti ini.
+
+![WhatsApp Image 2025-11-05 at 23 56 24](https://github.com/user-attachments/assets/c626145b-b288-4e23-8f29-d9ee0593db6b)
+
