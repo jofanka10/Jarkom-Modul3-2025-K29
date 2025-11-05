@@ -818,7 +818,11 @@ chmod -R 775 /var/www/laravel-app/storage
 chmod -R 775 /var/www/laravel-app/bootstrap/cache
 ```
 
-
+Setelah itu, jangan lupa untuk restart service.
+```
+service nginx restart
+service php8.4-fpm restart
+```
 ### Uji Coba di Client
 ```
 apt update
