@@ -1499,10 +1499,20 @@ Sebelum mengujinya, kita perlu pastikan nameserver dengan benar di Client.
 echo "nameserver 10.78.3.3" > /etc/resolv.conf
 ```
 
-Lalu, kita akna uji coba dengan kode ini.
+Lalu, kita akan uji coba dengan kode ini.
 ```
 curl --user "noldor:silvan" http://pharazon.K29.com
 ```
+
+Jika berhasil, maka akan muncul seperti ini.
+#### Test load balancer dengan auth ke pharazon
+
+![WhatsApp Image 2025-11-05 at 23 45 13](https://github.com/user-attachments/assets/7d067531-0598-4334-99b5-e9cf50ae67bb)
+
+
+#### Test multiple requests untuk lihat load balancing
+
+![WhatsApp Image 2025-11-05 at 23 48 13](https://github.com/user-attachments/assets/e51a921c-48c2-45a3-bc63-5ef4a5ac9e67)
 
 ## No. 17
 Pada soal ini, kita akan melakukan benchmark pada Pharazon. Namun sebelum itu, kita akan menginstall apache2-utils di **Client**. Untuk kodenya seperti ini.
