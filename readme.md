@@ -1382,9 +1382,10 @@ Jika berhasil maka akan muncul seperti ini.
 
 
 ## No. 15
-### 10.78.2.5, 10.78.2.6, 10.78.2.7
+### Galadriel, Celeborn, dan Oropher
+Pada node ini, kita akan tambahkan satu baris kode pada file ini.
 
-nano /etc/nginx/sites-available/default
+`nano /etc/nginx/sites-available/default`
 ```
 location ~ \.php$ {
     include snippets/fastcgi-php.conf;
@@ -1395,12 +1396,14 @@ location ~ \.php$ {
 }
 
 ```
-Restart nginx
+Lalu, restart nginx.
 ```
 nginx -t
 service nginx restart
 ```
-nano /var/www/html/index.php
+
+Selanjutnya, kita akan memodifikasi `index.php`. Untuk kodenya seperti ini.
+`nano /var/www/html/index.php`
 ```
 <?php
     // Ambil IP asli dari parameter Nginx
@@ -1417,6 +1420,10 @@ Pstikan
 echo "nameserver 10.78.3.3" > /etc/resolv.conf
 curl --user "noldor:silvan" http://galadriel.K29.com:8004
 ```
+
+Jika berhasil, maka akan muncul seperti ini.
+
+![WhatsApp Image 2025-11-05 at 23 28 13](https://github.com/user-attachments/assets/f7f96560-4327-46e6-a2ab-d2b5d46a9c43)
 
 ## No. 16
 16
