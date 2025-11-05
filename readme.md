@@ -1190,27 +1190,62 @@ Jika berhasil maka akan muncul seperti ini.
 <img width="694" height="50" alt="image" src="https://github.com/user-attachments/assets/6941669a-c841-4f0d-af95-855d0a159181" />
 
 ## No. 11
-### Amandil
+### Client
+Pada client kita akan menginstall `apache2-utils`. Karena menggunakan `nameserver 10.78.3.3` kami tidak dapat terhubung ke internet, maka kita menggantinya dengan `nameserver 10.78.5.2` untuk sementara waktu. Untuk kodenya seperti ini.
 
+```
+# Ubah nameserver untuk sementara
 echo "nameserver 10.78.5.2" > /etc/resolv.conf
 
+# Install apache2-utils
 apt update && apt install apache2-utils -y
 
+# Kembali ke nameserver semula
 echo "nameserver 10.78.3.3" > /etc/resolv.conf
+```
 
+Lalu, kita uji serangan benchmark ke Worker. Untuk kodenya seperti ini.
+```
+# Serangan Awal
 ab -n 100 -c 10 http://elros.K29.com/api/airing/
 
-
+# Serangan Penuh
 ab -n 2000 -c 100 http://elros.K29.com/api/airing/
 
+```
+
+Jika berhasil maka akan muncul seperti ini.
+
+#### Serangan Awal
+
+<img width="1025" height="1023" alt="image" src="https://github.com/user-attachments/assets/aaeb7524-b9e3-49a4-9e2b-ba552f467586" />
+
+
+#### Serangan Penuh
+
+<img width="955" height="1003" alt="image" src="https://github.com/user-attachments/assets/e8dabfc6-e98d-4e03-8a6a-d917d151cc72" />
 
 
 ### Node Worker
-
+Kita akan menginstall `htop` untuk melihat statistik CPU, memory, dan proses yang sedang berjalan. Untuk kodenya seperti ini.
+```
 apt update && apt install htop -y
+```
 
-
+Untuk menjalankannya kita cukup gunakan kode di bawah ini.
+```
 htop
+```
+
+Ini perbedaan pada Worker sebelum dan sesudah serangan benchmark.
+#### Sebelum Serangan Benchmark
+
+
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/80bfe4b1-0ac6-4d31-b80d-0be19c69aee9" />
+
+#### Sesudah Serangan Benchmark
+
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/507f1406-09c5-4111-8667-7816b91d6c25" />
 
 ## No. 12
 
