@@ -1037,30 +1037,35 @@ Jika berhasil akan muncul seperti ini.
 <img width="738" height="632" alt="image" src="https://github.com/user-attachments/assets/5d19b3f3-c88e-4f98-a489-9d5936f7bb3b" />
 
 ```
-curl http://elendil.K29.com:8001/api/airing
-curl http://isildur.K29.com:8002/api/airing
-curl http://anarion.K29.com:8003/api/airing
+curl -I http://elendil.K29.com:8001
+curl -I http://isildur.K29.com:8002
+curl -I http://anarion.K29.com:8003
 ```
 
-Jika berhasil, maka akan muncul seperti ini.
+Jika berhasil, maka akan muncul seperti ini (Elendil).
 
-<img width="871" height="167" alt="image" src="https://github.com/user-attachments/assets/38b17b10-f729-4dd8-b3fc-c6cec516c929" />
-
+<img width="1903" height="859" alt="image" src="https://github.com/user-attachments/assets/db8dc96c-1f3f-4867-a7c9-9c1e3fbde1bb" />
 
 ## No. 9
 ### Install lynx dan curl jika belum
+```
 apt update && apt install -y lynx curl
-
+```
 ### Test ke Elendil
 ```
-lynx http://elendil.k01.com:8001
+lynx http://elendil.K29.com:8001
 ```
 ### Test API endpoint
 ```
-curl http://elendil.K29.com:8001/api/airing
-curl http://isildur.K29.com:8002/api/airing
-curl http://anarion.K29.com:8003/api/airing
+lynx http://elendil.K29.com:8001/api/airing
+lynx http://isildur.K29.com:8002/api/airing
+lynx http://anarion.K29.com:8003/api/airing
 ```
+
+Jika berhasil maka akan muncul seperti ini
+
+<img width="1919" height="1079" alt="image" src="https://github.com/user-attachments/assets/f40430c7-cc39-4a5d-8664-4a7a2ddbce4c" />
+
 
 ### Error Handling
 Jika muncul `curl: (6) Could not resolve host: anarion.K29.com` pada Client, ubah nameservernya menjadi `nameserver 10.78.3.3` di `/etc/resolv.conf`.
