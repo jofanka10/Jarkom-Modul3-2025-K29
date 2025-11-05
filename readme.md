@@ -1504,4 +1504,23 @@ Lalu, kita akna uji coba dengan kode ini.
 curl --user "noldor:silvan" http://pharazon.K29.com
 ```
 
+## No. 17
+Pada soal ini, kita akan melakukan benchmark pada Pharazon. Namun sebelum itu, kita akan menginstall apache2-utils di **Client**. Untuk kodenya seperti ini.
+```
+apt update && apt install -y apache2-utils
+```
 
+Setelah itu, kita tambahkan hosts agar ia mengarah ke Pharazon. Untuk kodenya seperti ini.
+```
+echo "10.78.2.4 pharazon.k29.com" >> /etc/hosts
+```
+
+Lalu, kita akan melakukan benchmark dengan auth.
+```
+ab -n 100 -c 10 -A noldor:silvan http://pharazon.k29.com/
+```
+
+Selanjutnya, kita akan simulasi worker down dengan mematikan nginx di Galadriel. Untuk kodenya seperti ini.
+```
+ab -n 100 -c 10 -A noldor:silvan http://pharazon.k29.com/
+```
