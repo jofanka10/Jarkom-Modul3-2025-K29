@@ -1298,7 +1298,70 @@ Jika berhasil, maka akan muncul seperti ini.
 
 <img width="803" height="188" alt="image" src="https://github.com/user-attachments/assets/c0ce76b4-2539-4890-b4d4-dd391d3680da" />
 
+## No. 13 dan 14
 
+Pada soal ini, mula-mula kita akan install apache2-utils pada Galadriel, Celeborn, dan Oropher. Untuk kodenya seperti ini.
+
+### Galadriel, Celeborn, dan Oropher
+```
+apt update && apt install apache2-utils -y
+```
+
+Lalu, kita setting credential seperti ini.
+```
+htpasswd -cb /etc/nginx/.htpasswd noldor silvan
+```
+
+Setelah itu, kita akan konfigurasi file ini.
+
+**Ubah server_name (kedua dari atas) dan listen sesuai dengan ketentuan.**
+`/etc/nginx/sites-available/default`
+```
+# BLOK 1: Menangkap akses IP (dan menolaknya) 
+server {
+    listen 8004 default_server; # Port Galadriel 
+    listen [::]:8004 default_server;
+    server_name _; 
+    return 404; 
+}
+
+# BLOK 2: Menerima akses Domain (dengan password)
+server {
+    listen 8004;
+    listen [::]:8004;
+    server_name galadriel.K29.com; # Domain Galadriel 
+
+    root /var/www/html;
+    index index.php index.html index.htm;
+
+    # Soal 120: Basic HTTP Authentication
+    auth_basic "Taman Terlarang";
+    auth_basic_user_file /etc/nginx/.htpasswd;
+
+    location / {
+        try_files $uri $uri/ /index.php?$query_string;
+    }
+
+    location ~ \.php$ {
+        include snippets/fastcgi-php.conf;
+        fastcgi_pass unix:/var/run/php/php8.4-fpm.sock;
+    }
+}
+```
+
+Setelah itu, kita restart nginx.
+```
+nginx -t  # Pastikan "syntax is ok"
+service nginx restart
+```
+
+Jika berhasil maka akan muncul seperti ini.
+
+![WhatsApp Image 2025-11-05 at 23 18 45](https://github.com/user-attachments/assets/34b6653a-d85a-4175-93de-1ac1b704eba7)
+
+
+### Uji Coba pada Client
+Lalu, pada client, kita uji dengan kode berikut.
 ## No. 15
 ### 10.78.2.5, 10.78.2.6, 10.78.2.7
 
