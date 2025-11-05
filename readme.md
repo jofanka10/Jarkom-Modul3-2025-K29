@@ -1054,17 +1054,29 @@ apt update && apt install -y lynx curl
 ### Test ke Elendil
 ```
 lynx http://elendil.K29.com:8001
+lynx http://isildur.K29.com:8002
+lynx http://anarion.K29.com:8003
 ```
+
+Jika berhasil, maka akan muncul seperti ini.  (Elendil)
+
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/5834a376-235f-4a81-b16a-068f9f9fc60a" />
+
+
+
 ### Test API endpoint
 ```
-lynx http://elendil.K29.com:8001/api/airing
-lynx http://isildur.K29.com:8002/api/airing
-lynx http://anarion.K29.com:8003/api/airing
+curl http://elendil.K29.com:8001/api/airing
+curl http://isildur.K29.com:8002/api/airing
+curl http://anarion.K29.com:8003/api/airing
 ```
 
 Jika berhasil maka akan muncul seperti ini
 
-<img width="1919" height="1079" alt="image" src="https://github.com/user-attachments/assets/f40430c7-cc39-4a5d-8664-4a7a2ddbce4c" />
+<img width="1175" height="215" alt="image" src="https://github.com/user-attachments/assets/7a2d2b20-cfa5-42db-88a9-6322e2c38cdf" />
+
+
+
 
 
 ### Error Handling
