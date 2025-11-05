@@ -618,11 +618,9 @@ host khamul {
 Kita akan menginstal php84, composer dan nginx pada Ksatria Númenor. Untuk Instalasinya seperti ini.
 
 ### Elendil, Isdilur, Anarion
+Pertamna-tama, kita akan membuat tiga file sh dan dijalankan. Untuk filenya seperti ini.
+#### `/root/install_laravel.sh`
 ```
-apt update
-
-## /root/install_laravel.sh
-
 #!/bin/bash
 
 # Update
@@ -648,16 +646,44 @@ service nginx start
 service php8.4-fpm start
 ```
 
-
-### ke 2
-
+Lalu, jalankan dengan kode ini.
+```
+chmod +x /root/install_laravel.sh
+/root/install_laravel.sh
+```
+#### `/root/setup_laravel.sh`
 ```
 #!/bin/bash
-echo "=== Fix Composer untuk PHP 8.4 ==="
+# /root/setup_laravel.sh
 
+# Hapus default nginx
+rm -rf /var/www/html/*
+
+# Clone project
+cd /var/www
+git clone https://github.com/elshiraphine/laravel-simple-rest-api.git
+mv laravel-simple-rest-api laravel-app
+cd laravel-app
+
+# Hanya copy .env, jangan install atau generate key dulu
+cp .env.example .env
+```
+Lalu jalankan dengan kode ini
+```
+chmod +x /root/setup_laravel.sh
+/root/setup_laravel.sh
+```
+
+#### `/root/fix_composer.sh`
+Untuk mengatasi error pada Composer, kita akan membuat file ini.
+```
+#!/bin/bash
+# /root/fix_composer.sh
+
+echo "=== Fix Composer untuk PHP 8.4 ==="
 cd /var/www/laravel-app
 
-# Hapus vendor dan composer.lock yang lama
+# Hapus vendor dan composer.lock yang lama (jika ada)
 rm -rf vendor
 rm -f composer.lock
 
@@ -731,91 +757,24 @@ cat > composer.json << 'EOF'
 }
 EOF
 
-# Install ulang dependencies
+# Install ulang dependencies dengan file json yang baru
 composer install --no-dev --optimize-autoloader
 
-# Setup permissions dan .env
-chown -R www-data:www-data /var/www/laravel-app
-chmod -R 775 storage bootstrap/cache
-
-cp .env.example .env
+# Generate app key (pindahkan dari setup_laravel.sh)
 php artisan key:generate
 
 echo "=== Composer fixed untuk PHP 8.4 ==="
+```
 
+Setelah itu, kita jalankan dengan kode ini.
+```
 chmod +x /root/fix_composer.sh
 /root/fix_composer.sh
 ```
 
-
+### Konfigurasi Nginx
+Kita akan mengisi `/etc/nginx/sites-available/laravel`. Untuk kodenya seperti ini (langsung dimasukkan ke dalam terminal)
 ```
-## /root/setup_laravel.sh
-
-#!/bin/bash
-
-# Hapus default nginx
-rm -rf /var/www/html/*
-
-# Clone project
-cd /var/www
-git clone https://github.com/elshiraphine/laravel-simple-rest-api.git
-mv laravel-simple-rest-api laravel-app
-cd laravel-app
-
-# Install dependencies
-composer install --no-dev
-
-# Set permissions
-chown -R www-data:www-data /var/www/laravel-app
-chmod -R 775 storage bootstrap/cache
-
-# Setup .env
-cp .env.example .env
-php artisan key:generate
-```
-
-
-
-
-
-
-```
-## /etc/nginx/sites-available/laravel
-
-server {
-    listen 80;
-    server_name _;
-    root /var/www/laravel-app/public;
-
-    index index.php index.html index.htm;
-
-    location / {
-        try_files $uri $uri/ /index.php?$query_string;
-    }
-
-    location ~ \.php$ {
-        include snippets/fastcgi-php.conf;
-        fastcgi_pass unix:/var/run/php/php8.4-fpm.sock;
-    }
-
-    location ~ /\.ht {
-        deny all;
-    }
-}
-```
-
-
-
-
-
-## /root/configure_nginx.sh
-```
-#!/bin/bash
-
-# Backup default config
-cp /etc/nginx/sites-available/laravel /etc/nginx/sites-available/laravel.backup
-
-# Copy config kita
 cat > /etc/nginx/sites-available/laravel << 'EOF'
 server {
     listen 80;
@@ -838,32 +797,29 @@ server {
     }
 }
 EOF
+```
 
-# Enable site
+**Dalam file tersebut, ada listen dan server_name (No. 8). Ubah sesuai parameter.**
+
+
+Setelah itu, aktifkan site dan tes konfigurasi dengan kode ini.
+```
 ln -sf /etc/nginx/sites-available/laravel /etc/nginx/sites-enabled/
 rm -f /etc/nginx/sites-enabled/default
 
-# Test dan restart nginx
 nginx -t
-service nginx restart
-service php8.4-fpm restart
+```
+
+Lalu, kita ubah permissionnya agar file dapat dijalankan di client.
+```
+chown -R www-data:www-data /var/www/laravel-app
+
+chmod -R 775 /var/www/laravel-app/storage
+chmod -R 775 /var/www/laravel-app/bootstrap/cache
 ```
 
 
-
-```
-chmod +x /root/install_laravel.sh
-chmod +x /root/setup_laravel.sh
-chmod +x /root/configure_nginx.sh
-```
-```
-/root/install_laravel.sh
-/root/setup_laravel.sh
-/root/configure_nginx.sh
-```
-
-
-Uji coba
+### Uji Coba di Client
 ```
 apt update
 apt install lynx -y
@@ -873,6 +829,35 @@ lynx http://10.78.1.2
 lynx http://10.78.1.3
 lynx http://10.78.1.4
 ```
+
+
+### Error Handling
+1. Error
+   ```
+   /root/fix_composer.sh: line 82: composer: command not found
+   PHP Warning:  require(/var/www/laravel-app/vendor/autoload.php): Failed to open stream: No such file or directory in /var
+   www/laravel-app/artisan on line 18
+   PHP Fatal error:  Uncaught Error: Failed opening required '/var/www/laravel-app/vendor/autoload.php' (include_path='.:/usr
+   share/php') in /var/www/laravel-app/artisan:18
+   ```
+   ```
+   mv: cannot stat 'composer.phar': No such file or directory
+   chmod: cannot access '/usr/local/bin/composer': No such file or directory
+   ```
+   Solusi
+
+   ```
+   # Cek isi file
+   ls -l /root/composer.phar
+
+   # Jika ada, jalankan kode ini
+   mv /root/composer.phar /usr/local/bin/composer
+   chmod +x /usr/local/bin/composer
+   composer --version
+
+   # Jika muncul versi, maka masalah sudah fix.
+   ```
+   
 
 ## No. 8
 
